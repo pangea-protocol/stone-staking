@@ -12,6 +12,7 @@ export type { IERC20Permit } from "./IERC20Permit";
 export type { IERC20Metadata } from "./IERC20Metadata";
 export type { IERC20 } from "./IERC20";
 export type { Multicall } from "./Multicall";
+export type { IStakedStone } from "./IStakedStone";
 export type { StakedStone } from "./StakedStone";
 export type { Token } from "./Token";
 
@@ -26,5 +27,6 @@ export { IERC20Permit__factory } from "./factories/IERC20Permit__factory";
 export { IERC20Metadata__factory } from "./factories/IERC20Metadata__factory";
 export { IERC20__factory } from "./factories/IERC20__factory";
 export { Multicall__factory } from "./factories/Multicall__factory";
+export { IStakedStone__factory } from "./factories/IStakedStone__factory";
 export { StakedStone__factory } from "./factories/StakedStone__factory";
 export { Token__factory } from "./factories/Token__factory";
