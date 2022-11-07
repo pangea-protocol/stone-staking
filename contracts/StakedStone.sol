@@ -7,12 +7,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Multicall.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-
 contract StakedStone is Multicall, AccessControlUpgradeable {
-
     using SafeERC20 for IERC20;
 
-    mapping(address=>uint256) private _balanceOf;
+    bytes32 public constant MANAGER_ROLE = keccak256(abi.encode("MANAGER"));
+
+    mapping(address => uint256) private _balanceOf;
     uint256 private _totalSupply;
 
     uint256 public cooldownPeriod;
@@ -27,25 +27,33 @@ contract StakedStone is Multicall, AccessControlUpgradeable {
     mapping(uint256 => uint256) private _ownedRequestsIndex;
 
     struct UnstakingRequest {
+        uint256 id;
         uint256 amount;
-        uint256 claimableTs;
+        uint256 requestTs;
         bool isClaimed;
     }
 
     event Stake(address indexed owner, uint256 amount);
     event Unstake(address indexed owner, uint256 amount);
     event Withdraw(address indexed owner, uint256 amount);
+    event UpdateCoolDown(uint256 prev, uint256 curr);
 
     function initialize(address _token) external initializer {
         token = _token;
         cooldownPeriod = 7 days;
 
         __AccessControl_init();
+        _setupRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function setCooldownPeriod(uint256 period) external {
-        // TODO AUTHORIZATION
+    /**
+     * @notice Sets period until un-staking requested amount is able to be withdrawn.
+     */
+    function setCooldownPeriod(uint256 period) external onlyRole(MANAGER_ROLE) {
+        uint256 prev = cooldownPeriod;
         cooldownPeriod = period;
+
+        emit UpdateCoolDown(prev, period);
     }
 
     /**
@@ -60,6 +68,14 @@ contract StakedStone is Multicall, AccessControlUpgradeable {
      */
     function totalSupply() external view returns (uint256) {
         return _totalSupply;
+    }
+
+    function unstakingRequest(uint256 requestId) external view returns (UnstakingRequest memory) {
+        return _unstakingRequests[requestId];
+    }
+
+    function requestOwnerOf(uint256 requestId) external view returns (address) {
+        return _requestOwnerOf[requestId];
     }
 
     /**
@@ -96,13 +112,10 @@ contract StakedStone is Multicall, AccessControlUpgradeable {
         _balanceOf[msg.sender] -= amount;
         _totalSupply -= amount;
 
-        _unstakingRequests.push(
-            UnstakingRequest(amount, block.timestamp + cooldownPeriod, false)
-        );
+        uint256 requestId = _unstakingRequests.length;
+        _unstakingRequests.push(UnstakingRequest(requestId, amount, block.timestamp, false));
 
-        uint256 count = _requestCounts[msg.sender] ++;
-
-        uint256 requestId = _unstakingRequests.length - 1;
+        uint256 count = _requestCounts[msg.sender]++;
 
         _requestOwnerOf[requestId] = msg.sender;
         _ownedRequests[msg.sender][count] = requestId;
@@ -118,13 +131,13 @@ contract StakedStone is Multicall, AccessControlUpgradeable {
         UnstakingRequest memory request = _unstakingRequests[requestId];
         require(!request.isClaimed, "ALREADY CLAIMED");
         require(_requestOwnerOf[requestId] == msg.sender, "NOT OWNER");
-        require(request.claimableTs >= block.timestamp, "NEED COOLDOWN");
+        require(request.requestTs + cooldownPeriod <= block.timestamp, "NEED COOLDOWN");
 
         IERC20(token).safeTransfer(msg.sender, request.amount);
 
         _unstakingRequests[requestId].isClaimed = true;
 
-        uint256 lastRequestIndex = -- _requestCounts[msg.sender];
+        uint256 lastRequestIndex = --_requestCounts[msg.sender];
         uint256 requestIndex = _ownedRequestsIndex[requestId];
 
         if (requestIndex != lastRequestIndex) {
