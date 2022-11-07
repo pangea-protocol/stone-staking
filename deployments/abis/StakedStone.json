@@ -21,7 +21,7 @@
         "type": "uint256"
       }
     ],
-    "name": "CancelDistribution",
+    "name": "CancelReward",
     "type": "event"
   },
   {
@@ -65,7 +65,7 @@
         "type": "uint256"
       }
     ],
-    "name": "DepositForDistribution",
+    "name": "DepositReward",
     "type": "event"
   },
   {
@@ -290,7 +290,7 @@
         "type": "uint256"
       }
     ],
-    "name": "cancelDistribution",
+    "name": "cancelReward",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -347,7 +347,7 @@
         "type": "uint256"
       }
     ],
-    "name": "depositForDistribution",
+    "name": "depositReward",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

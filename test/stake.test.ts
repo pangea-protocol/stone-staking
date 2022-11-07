@@ -16,6 +16,7 @@ describe("STAKING UNIT TEST", async () => {
   let stakedStone: StakedStone;
 
   let snapshotId: string;
+
   before("", async () => {
     _snapshotId = await ethers.provider.send("evm_snapshot", []);
 

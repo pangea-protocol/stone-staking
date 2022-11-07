@@ -20,6 +20,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
 
     uint256 private _rewardGrowthGlobalLast;
     uint256 private _rewardCheckpoint;
+    uint256 private _pendingReward;
 
     mapping(address => uint256) private _balanceOf;
     uint256 private _totalSupply;
@@ -50,10 +51,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     }
 
     modifier settleReward(address owner) {
-        if (_totalSupply > 0) {
-            // @dev _totalSupply = 0일때의 엣지케이스 헨들링 주의
-            updateRewardGrowthGlobal();
-        }
+        updateRewardGrowthGlobal();
         updateRewardCheckpoint(owner);
 
         _;
@@ -61,60 +59,64 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
 
     /**
      * @notice deposit for distributing tokens linearly for 1 week from startTime
+     * @param amount amount to deposit
+     * @param startTime The start time of distribution, `startTime % 604,800 == 0`
      */
-    function depositForDistribution(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
-        require(startTime % 7 days == 0, "startTime % 7 days == 0");
-        require(startTime + 7 days >= block.timestamp, "distribution is confirmed");
+    function depositReward(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
+        require(startTime % 7 days == 0, "startTime % 7 days != 0");
+        require(startTime >= block.timestamp, "too late");
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         totalRewardPerWeek[startTime] += amount;
 
-        emit DepositForDistribution(msg.sender, startTime, amount);
+        emit DepositReward(msg.sender, startTime, amount);
     }
 
     /**
-     * @notice Retrieve unallocated future tokens
+     * @notice Retrieve undistributed token
      */
-    function cancelDistribution(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
-        require(startTime + 7 days >= block.timestamp, "distribution is confirmed");
+    function cancelReward(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
+        require(startTime >= block.timestamp, "too late");
 
         totalRewardPerWeek[startTime] -= amount;
 
         IERC20(token).transfer(msg.sender, amount);
 
-        emit CancelDistribution(msg.sender, startTime, amount);
+        emit CancelReward(msg.sender, startTime, amount);
     }
 
     function updateRewardGrowthGlobal() internal {
-        if (_rewardCheckpoint != block.timestamp) {
-            _rewardGrowthGlobalLast = rewardGrowthGlobal();
-            _rewardCheckpoint = block.timestamp;
-        }
+        if (_rewardCheckpoint >= block.timestamp) return;
+
+        _rewardGrowthGlobalLast = rewardGrowthGlobal();
+        _rewardCheckpoint = block.timestamp;
+        if (_totalSupply > 0 && _pendingReward > 0) _pendingReward = 0;
     }
 
     function updateRewardCheckpoint(address owner) internal {
-        uint256 _balance = _balanceOf[owner];
-        if (_balance == 0) return;
-
         uint256 growthGlobal = _rewardGrowthGlobalLast;
 
         RewardSnapshot storage snapshot = _userRewardSnapshot[owner];
 
+        snapshot._owed += FullMath.mulDiv(
+            growthGlobal - snapshot._growthGlobalLast, _balanceOf[owner], FixedPoint.Q96
+        );
         snapshot._growthGlobalLast = growthGlobal;
-        snapshot._owed += FullMath.mulDiv(growthGlobal - snapshot._growthGlobalLast, _balance, FixedPoint.Q96);
     }
 
     function rewardGrowthGlobal() public view returns (uint256) {
-        uint256 amount = calculateRewardToDistribute();
-        return _rewardGrowthGlobalLast + FullMath.mulDiv(amount, FixedPoint.Q96, _totalSupply);
+        if (_totalSupply > 0) {
+            uint256 amount = calculateRewardToDistribute();
+            return _rewardGrowthGlobalLast + FullMath.mulDiv(amount, FixedPoint.Q96, _totalSupply);
+        } else {
+            return _rewardGrowthGlobalLast;
+        }
     }
 
     function calculateRewardToDistribute() internal view returns (uint256 amount) {
         uint256 _checkpoint = _rewardCheckpoint;
-        if (_checkpoint == 0) {
-            _checkpoint = initialCheckpoint;
-        }
+        if (_checkpoint == 0) _checkpoint = initialCheckpoint;
 
         uint256 currentWeekStartTime = weekStartTime(block.timestamp);
         if (_checkpoint < currentWeekStartTime) {
@@ -127,6 +129,8 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
         amount += (
             totalRewardPerWeek[currentWeekStartTime] * (block.timestamp - _checkpoint) / 7 days
         );
+
+        amount += _pendingReward;
     }
 
     /**
@@ -260,7 +264,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     }
 
     /**
-     * calculate claimable STONE reward
+     * @notice calculate claimable STONE reward
      */
     function claimableReward(address owner) external view returns (uint256) {
         RewardSnapshot memory snapshot = _userRewardSnapshot[owner];

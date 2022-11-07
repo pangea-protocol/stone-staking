@@ -41,11 +41,11 @@ export interface StakedStoneInterface extends utils.Interface {
     "DEFAULT_ADMIN_ROLE()": FunctionFragment;
     "MANAGER_ROLE()": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
-    "cancelDistribution(uint256,uint256)": FunctionFragment;
+    "cancelReward(uint256,uint256)": FunctionFragment;
     "claimReward()": FunctionFragment;
     "claimableReward(address)": FunctionFragment;
     "cooldownPeriod()": FunctionFragment;
-    "depositForDistribution(uint256,uint256)": FunctionFragment;
+    "depositReward(uint256,uint256)": FunctionFragment;
     "getRoleAdmin(bytes32)": FunctionFragment;
     "grantRole(bytes32,address)": FunctionFragment;
     "hasRole(bytes32,address)": FunctionFragment;
@@ -79,7 +79,7 @@ export interface StakedStoneInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "cancelDistribution",
+    functionFragment: "cancelReward",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
@@ -95,7 +95,7 @@ export interface StakedStoneInterface extends utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "depositForDistribution",
+    functionFragment: "depositReward",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
@@ -181,7 +181,7 @@ export interface StakedStoneInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "cancelDistribution",
+    functionFragment: "cancelReward",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -197,7 +197,7 @@ export interface StakedStoneInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "depositForDistribution",
+    functionFragment: "depositReward",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -256,9 +256,9 @@ export interface StakedStoneInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
-    "CancelDistribution(address,uint256,uint256)": EventFragment;
+    "CancelReward(address,uint256,uint256)": EventFragment;
     "Claim(address,uint256)": EventFragment;
-    "DepositForDistribution(address,uint256,uint256)": EventFragment;
+    "DepositReward(address,uint256,uint256)": EventFragment;
     "Initialized(uint8)": EventFragment;
     "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
     "RoleGranted(bytes32,address,address)": EventFragment;
@@ -269,9 +269,9 @@ export interface StakedStoneInterface extends utils.Interface {
     "Withdraw(address,uint256)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "CancelDistribution"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "CancelReward"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Claim"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "DepositForDistribution"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "DepositReward"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Initialized"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
@@ -282,13 +282,12 @@ export interface StakedStoneInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "Withdraw"): EventFragment;
 }
 
-export type CancelDistributionEvent = TypedEvent<
+export type CancelRewardEvent = TypedEvent<
   [string, BigNumber, BigNumber],
   { operator: string; weekStartTime: BigNumber; amount: BigNumber }
 >;
 
-export type CancelDistributionEventFilter =
-  TypedEventFilter<CancelDistributionEvent>;
+export type CancelRewardEventFilter = TypedEventFilter<CancelRewardEvent>;
 
 export type ClaimEvent = TypedEvent<
   [string, BigNumber],
@@ -297,13 +296,12 @@ export type ClaimEvent = TypedEvent<
 
 export type ClaimEventFilter = TypedEventFilter<ClaimEvent>;
 
-export type DepositForDistributionEvent = TypedEvent<
+export type DepositRewardEvent = TypedEvent<
   [string, BigNumber, BigNumber],
   { operator: string; weekStartTime: BigNumber; amount: BigNumber }
 >;
 
-export type DepositForDistributionEventFilter =
-  TypedEventFilter<DepositForDistributionEvent>;
+export type DepositRewardEventFilter = TypedEventFilter<DepositRewardEvent>;
 
 export type InitializedEvent = TypedEvent<[number], { version: number }>;
 
@@ -395,7 +393,7 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber] & { amount: BigNumber }>;
 
-    cancelDistribution(
+    cancelReward(
       amount: BigNumberish,
       startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -412,7 +410,7 @@ export interface StakedStone extends BaseContract {
 
     cooldownPeriod(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    depositForDistribution(
+    depositReward(
       amount: BigNumberish,
       startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -522,7 +520,7 @@ export interface StakedStone extends BaseContract {
 
   balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  cancelDistribution(
+  cancelReward(
     amount: BigNumberish,
     startTime: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -536,7 +534,7 @@ export interface StakedStone extends BaseContract {
 
   cooldownPeriod(overrides?: CallOverrides): Promise<BigNumber>;
 
-  depositForDistribution(
+  depositReward(
     amount: BigNumberish,
     startTime: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -646,7 +644,7 @@ export interface StakedStone extends BaseContract {
 
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    cancelDistribution(
+    cancelReward(
       amount: BigNumberish,
       startTime: BigNumberish,
       overrides?: CallOverrides
@@ -661,7 +659,7 @@ export interface StakedStone extends BaseContract {
 
     cooldownPeriod(overrides?: CallOverrides): Promise<BigNumber>;
 
-    depositForDistribution(
+    depositReward(
       amount: BigNumberish,
       startTime: BigNumberish,
       overrides?: CallOverrides
@@ -749,16 +747,16 @@ export interface StakedStone extends BaseContract {
   };
 
   filters: {
-    "CancelDistribution(address,uint256,uint256)"(
+    "CancelReward(address,uint256,uint256)"(
       operator?: string | null,
       weekStartTime?: BigNumberish | null,
       amount?: null
-    ): CancelDistributionEventFilter;
-    CancelDistribution(
+    ): CancelRewardEventFilter;
+    CancelReward(
       operator?: string | null,
       weekStartTime?: BigNumberish | null,
       amount?: null
-    ): CancelDistributionEventFilter;
+    ): CancelRewardEventFilter;
 
     "Claim(address,uint256)"(
       owner?: string | null,
@@ -766,16 +764,16 @@ export interface StakedStone extends BaseContract {
     ): ClaimEventFilter;
     Claim(owner?: string | null, amount?: null): ClaimEventFilter;
 
-    "DepositForDistribution(address,uint256,uint256)"(
+    "DepositReward(address,uint256,uint256)"(
       operator?: string | null,
       weekStartTime?: BigNumberish | null,
       amount?: null
-    ): DepositForDistributionEventFilter;
-    DepositForDistribution(
+    ): DepositRewardEventFilter;
+    DepositReward(
       operator?: string | null,
       weekStartTime?: BigNumberish | null,
       amount?: null
-    ): DepositForDistributionEventFilter;
+    ): DepositRewardEventFilter;
 
     "Initialized(uint8)"(version?: null): InitializedEventFilter;
     Initialized(version?: null): InitializedEventFilter;
@@ -845,7 +843,7 @@ export interface StakedStone extends BaseContract {
 
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    cancelDistribution(
+    cancelReward(
       amount: BigNumberish,
       startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -862,7 +860,7 @@ export interface StakedStone extends BaseContract {
 
     cooldownPeriod(overrides?: CallOverrides): Promise<BigNumber>;
 
-    depositForDistribution(
+    depositReward(
       amount: BigNumberish,
       startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -981,7 +979,7 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    cancelDistribution(
+    cancelReward(
       amount: BigNumberish,
       startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -998,7 +996,7 @@ export interface StakedStone extends BaseContract {
 
     cooldownPeriod(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    depositForDistribution(
+    depositReward(
       amount: BigNumberish,
       startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }

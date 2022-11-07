@@ -22,6 +22,6 @@ interface IStakedStone {
 
     event UpdateCoolDown(uint256 prev, uint256 curr);
 
-    event DepositForDistribution(address indexed operator, uint256 indexed weekStartTime, uint256 amount);
-    event CancelDistribution(address indexed operator, uint256 indexed weekStartTime, uint256 amount);
+    event DepositReward(address indexed operator, uint256 indexed weekStartTime, uint256 amount);
+    event CancelReward(address indexed operator, uint256 indexed weekStartTime, uint256 amount);
 }
