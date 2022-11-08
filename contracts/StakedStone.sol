@@ -204,6 +204,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
      * @notice Stakes Stone for msg.sender
      */
     function stake(uint256 amount) external updateRewardCheckpoint(msg.sender) {
+        require(block.timestamp >= initialTime, "NOT START");
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         _stake(msg.sender, amount);
