@@ -64,11 +64,11 @@ export interface StakedStoneInterface extends utils.Interface {
     "MANAGER_ROLE()": FunctionFragment;
     "_accumulativeUserReward(address)": FunctionFragment;
     "accumulativeUserReward(address)": FunctionFragment;
+    "allocatedDividend(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
     "cancelReward(uint256,uint256)": FunctionFragment;
     "claimDividend(uint256)": FunctionFragment;
     "claimReward()": FunctionFragment;
-    "claimableDividend(address,uint256)": FunctionFragment;
     "claimableReward(address)": FunctionFragment;
     "cooldownPeriod()": FunctionFragment;
     "depositDividend(address,uint256)": FunctionFragment;
@@ -116,6 +116,10 @@ export interface StakedStoneInterface extends utils.Interface {
     functionFragment: "accumulativeUserReward",
     values: [string]
   ): string;
+  encodeFunctionData(
+    functionFragment: "allocatedDividend",
+    values: [string, BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
   encodeFunctionData(
     functionFragment: "cancelReward",
@@ -128,10 +132,6 @@ export interface StakedStoneInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "claimReward",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "claimableDividend",
-    values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "claimableReward",
@@ -257,6 +257,10 @@ export interface StakedStoneInterface extends utils.Interface {
     functionFragment: "accumulativeUserReward",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "allocatedDividend",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "cancelReward",
@@ -268,10 +272,6 @@ export interface StakedStoneInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "claimReward",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "claimableDividend",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -513,6 +513,18 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    allocatedDividend(
+      owner: string,
+      epoch: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [boolean, string[], BigNumber[]] & {
+        isPaid: boolean;
+        tokens: string[];
+        amounts: BigNumber[];
+      }
+    >;
+
     balanceOf(
       owner: string,
       overrides?: CallOverrides
@@ -532,18 +544,6 @@ export interface StakedStone extends BaseContract {
     claimReward(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    claimableDividend(
-      owner: string,
-      epoch: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [boolean, string[], BigNumber[]] & {
-        isPaid: boolean;
-        tokens: string[];
-        amounts: BigNumber[];
-      }
-    >;
 
     claimableReward(
       owner: string,
@@ -694,6 +694,18 @@ export interface StakedStone extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  allocatedDividend(
+    owner: string,
+    epoch: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<
+    [boolean, string[], BigNumber[]] & {
+      isPaid: boolean;
+      tokens: string[];
+      amounts: BigNumber[];
+    }
+  >;
+
   balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   cancelReward(
@@ -710,18 +722,6 @@ export interface StakedStone extends BaseContract {
   claimReward(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
-
-  claimableDividend(
-    owner: string,
-    epoch: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<
-    [boolean, string[], BigNumber[]] & {
-      isPaid: boolean;
-      tokens: string[];
-      amounts: BigNumber[];
-    }
-  >;
 
   claimableReward(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -869,6 +869,18 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    allocatedDividend(
+      owner: string,
+      epoch: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [boolean, string[], BigNumber[]] & {
+        isPaid: boolean;
+        tokens: string[];
+        amounts: BigNumber[];
+      }
+    >;
+
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     cancelReward(
@@ -883,18 +895,6 @@ export interface StakedStone extends BaseContract {
     ): Promise<void>;
 
     claimReward(overrides?: CallOverrides): Promise<void>;
-
-    claimableDividend(
-      owner: string,
-      epoch: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<
-      [boolean, string[], BigNumber[]] & {
-        isPaid: boolean;
-        tokens: string[];
-        amounts: BigNumber[];
-      }
-    >;
 
     claimableReward(
       owner: string,
@@ -1134,6 +1134,12 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    allocatedDividend(
+      owner: string,
+      epoch: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     cancelReward(
@@ -1149,12 +1155,6 @@ export interface StakedStone extends BaseContract {
 
     claimReward(
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    claimableDividend(
-      owner: string,
-      epoch: BigNumberish,
-      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     claimableReward(
@@ -1312,6 +1312,12 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    allocatedDividend(
+      owner: string,
+      epoch: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     balanceOf(
       owner: string,
       overrides?: CallOverrides
@@ -1330,12 +1336,6 @@ export interface StakedStone extends BaseContract {
 
     claimReward(
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    claimableDividend(
-      owner: string,
-      epoch: BigNumberish,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     claimableReward(

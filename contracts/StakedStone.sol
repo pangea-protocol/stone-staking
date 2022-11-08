@@ -508,7 +508,11 @@ contract StakedStone is
         }
     }
 
-    function _calculateUserShare(address owner, uint256 epoch, Dividend memory epochDividend) private view returns (uint256 share) {
+    function _calculateUserShare(
+        address owner,
+        uint256 epoch,
+        Dividend memory epochDividend
+    ) private view returns (uint256 share) {
         // first case, already settle
         share = _userDividendSnapshot[owner][epoch].share;
         if (share > 0) return share;

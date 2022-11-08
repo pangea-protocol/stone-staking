@@ -31,7 +31,6 @@ interface IStakedStoneStruct {
     struct DividendSnapshot {
         // @dev 지급 여부
         bool isPaid;
-
         // @dev 할당된 배당 비중
         uint256 share;
     }
@@ -117,9 +116,5 @@ interface IStakedStone is IStakedStoneStruct, IStakedStoneEvent {
     function allocatedDividend(
         address owner,
         uint256 epoch
-    ) external view returns (
-        bool isPaid,
-        address[] memory tokens,
-        uint256[] memory amounts
-    );
+    ) external view returns (bool isPaid, address[] memory tokens, uint256[] memory amounts);
 }

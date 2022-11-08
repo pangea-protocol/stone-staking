@@ -339,6 +339,40 @@
         "internalType": "address",
         "name": "owner",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "epoch",
+        "type": "uint256"
+      }
+    ],
+    "name": "allocatedDividend",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "isPaid",
+        "type": "bool"
+      },
+      {
+        "internalType": "address[]",
+        "name": "tokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "amounts",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
       }
     ],
     "name": "balanceOf",
@@ -388,40 +422,6 @@
     "name": "claimReward",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "epoch",
-        "type": "uint256"
-      }
-    ],
-    "name": "claimableDividend",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "isPaid",
-        "type": "bool"
-      },
-      {
-        "internalType": "address[]",
-        "name": "tokens",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "amounts",
-        "type": "uint256[]"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -530,7 +530,7 @@
             "type": "uint256[]"
           }
         ],
-        "internalType": "struct IStakedStone.Dividend",
+        "internalType": "struct IStakedStoneStruct.Dividend",
         "name": "",
         "type": "tuple"
       }
@@ -868,7 +868,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct IStakedStone.UnstakingRequest",
+        "internalType": "struct IStakedStoneStruct.UnstakingRequest",
         "name": "",
         "type": "tuple"
       }
@@ -914,7 +914,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct IStakedStone.UnstakingRequest",
+        "internalType": "struct IStakedStoneStruct.UnstakingRequest",
         "name": "",
         "type": "tuple"
       }

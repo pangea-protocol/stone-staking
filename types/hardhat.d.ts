@@ -57,9 +57,29 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Multicall__factory>;
     getContractFactory(
+      name: "IMasterDeployer",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IMasterDeployer__factory>;
+    getContractFactory(
+      name: "IProtocolFeePool",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IProtocolFeePool__factory>;
+    getContractFactory(
       name: "IStakedStone",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IStakedStone__factory>;
+    getContractFactory(
+      name: "IStakedStoneEvent",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IStakedStoneEvent__factory>;
+    getContractFactory(
+      name: "IWETH",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IWETH__factory>;
+    getContractFactory(
+      name: "ProtocolRevenueShare",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ProtocolRevenueShare__factory>;
     getContractFactory(
       name: "StakedStone",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -125,10 +145,35 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.Multicall>;
     getContractAt(
+      name: "IMasterDeployer",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IMasterDeployer>;
+    getContractAt(
+      name: "IProtocolFeePool",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IProtocolFeePool>;
+    getContractAt(
       name: "IStakedStone",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IStakedStone>;
+    getContractAt(
+      name: "IStakedStoneEvent",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IStakedStoneEvent>;
+    getContractAt(
+      name: "IWETH",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IWETH>;
+    getContractAt(
+      name: "ProtocolRevenueShare",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ProtocolRevenueShare>;
     getContractAt(
       name: "StakedStone",
       address: string,
