@@ -97,7 +97,10 @@ import "./libraries/FixedPoint.sol";
         : 리워드 수령
 
  */
-contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
+contract StakedStone is
+    Multicall,
+    AccessControlUpgradeable,
+    IStakedStone {
     using SafeERC20 for IERC20;
 
     bytes32 public constant MANAGER_ROLE = keccak256(abi.encode("MANAGER"));
