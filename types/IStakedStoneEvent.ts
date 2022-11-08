@@ -13,7 +13,11 @@ export interface IStakedStoneEventInterface extends utils.Interface {
     "CancelReward(address,uint256,uint256)": EventFragment;
     "Claim(address,uint256)": EventFragment;
     "ClaimDividend(address,uint256,address,uint256)": EventFragment;
+    "DepositDividend(uint256,address,uint256)": EventFragment;
     "DepositReward(address,uint256,uint256)": EventFragment;
+    "ExecuteDividend(uint256,address[],uint256[])": EventFragment;
+    "ResetDividend(uint256)": EventFragment;
+    "SetDividend(uint256,uint256,uint256,uint256)": EventFragment;
     "Stake(address,uint256)": EventFragment;
     "Unstake(address,uint256,uint256)": EventFragment;
     "UpdateCoolDown(uint256,uint256)": EventFragment;
@@ -23,7 +27,11 @@ export interface IStakedStoneEventInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "CancelReward"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Claim"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "ClaimDividend"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "DepositDividend"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "DepositReward"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "ExecuteDividend"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "ResetDividend"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetDividend"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Stake"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Unstake"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "UpdateCoolDown"): EventFragment;
@@ -51,12 +59,45 @@ export type ClaimDividendEvent = TypedEvent<
 
 export type ClaimDividendEventFilter = TypedEventFilter<ClaimDividendEvent>;
 
+export type DepositDividendEvent = TypedEvent<
+  [BigNumber, string, BigNumber],
+  { dividendId: BigNumber; token: string; amount: BigNumber }
+>;
+
+export type DepositDividendEventFilter = TypedEventFilter<DepositDividendEvent>;
+
 export type DepositRewardEvent = TypedEvent<
   [string, BigNumber, BigNumber],
   { operator: string; weekStartTime: BigNumber; amount: BigNumber }
 >;
 
 export type DepositRewardEventFilter = TypedEventFilter<DepositRewardEvent>;
+
+export type ExecuteDividendEvent = TypedEvent<
+  [BigNumber, string[], BigNumber[]],
+  { dividendId: BigNumber; token: string[]; amount: BigNumber[] }
+>;
+
+export type ExecuteDividendEventFilter = TypedEventFilter<ExecuteDividendEvent>;
+
+export type ResetDividendEvent = TypedEvent<
+  [BigNumber],
+  { dividendId: BigNumber }
+>;
+
+export type ResetDividendEventFilter = TypedEventFilter<ResetDividendEvent>;
+
+export type SetDividendEvent = TypedEvent<
+  [BigNumber, BigNumber, BigNumber, BigNumber],
+  {
+    dividendId: BigNumber;
+    startTime: BigNumber;
+    recordDate: BigNumber;
+    totalShare: BigNumber;
+  }
+>;
+
+export type SetDividendEventFilter = TypedEventFilter<SetDividendEvent>;
 
 export type StakeEvent = TypedEvent<
   [string, BigNumber],
@@ -147,6 +188,17 @@ export interface IStakedStoneEvent extends BaseContract {
       amount?: null
     ): ClaimDividendEventFilter;
 
+    "DepositDividend(uint256,address,uint256)"(
+      dividendId?: BigNumberish | null,
+      token?: null,
+      amount?: null
+    ): DepositDividendEventFilter;
+    DepositDividend(
+      dividendId?: BigNumberish | null,
+      token?: null,
+      amount?: null
+    ): DepositDividendEventFilter;
+
     "DepositReward(address,uint256,uint256)"(
       operator?: string | null,
       weekStartTime?: BigNumberish | null,
@@ -157,6 +209,35 @@ export interface IStakedStoneEvent extends BaseContract {
       weekStartTime?: BigNumberish | null,
       amount?: null
     ): DepositRewardEventFilter;
+
+    "ExecuteDividend(uint256,address[],uint256[])"(
+      dividendId?: BigNumberish | null,
+      token?: null,
+      amount?: null
+    ): ExecuteDividendEventFilter;
+    ExecuteDividend(
+      dividendId?: BigNumberish | null,
+      token?: null,
+      amount?: null
+    ): ExecuteDividendEventFilter;
+
+    "ResetDividend(uint256)"(
+      dividendId?: BigNumberish | null
+    ): ResetDividendEventFilter;
+    ResetDividend(dividendId?: BigNumberish | null): ResetDividendEventFilter;
+
+    "SetDividend(uint256,uint256,uint256,uint256)"(
+      dividendId?: BigNumberish | null,
+      startTime?: null,
+      recordDate?: null,
+      totalShare?: null
+    ): SetDividendEventFilter;
+    SetDividend(
+      dividendId?: BigNumberish | null,
+      startTime?: null,
+      recordDate?: null,
+      totalShare?: null
+    ): SetDividendEventFilter;
 
     "Stake(address,uint256)"(
       owner?: string | null,

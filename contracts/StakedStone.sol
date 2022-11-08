@@ -203,6 +203,13 @@ contract StakedStone is
         currentDividend.startDate = _dividendHistory.length > 0 ? _dividendHistory[_dividendHistory.length-1].recordDate : openDate;
         currentDividend.recordDate = block.timestamp;
         currentDividend.totalShare = totalShare;
+
+        emit SetDividend(
+            _dividendHistory.length,
+            currentDividend.startDate,
+            currentDividend.recordDate,
+            currentDividend.totalShare
+        );
     }
 
     /**
@@ -219,6 +226,8 @@ contract StakedStone is
         }
 
         delete currentDividend;
+
+        emit ResetDividend(_dividendHistory.length);
     }
 
     /**
@@ -234,6 +243,8 @@ contract StakedStone is
 
         currentDividend.tokens.push(token);
         currentDividend.amounts.push(amount);
+
+        emit DepositDividend(_dividendHistory.length, token, amount);
     }
 
     /**
@@ -256,6 +267,12 @@ contract StakedStone is
 
         totalShare -= currentDividend.totalShare;
         delete currentDividend;
+
+        emit ExecuteDividend(
+            _dividendHistory.length - 1,
+            currentDividend.tokens,
+            currentDividend.amounts
+        );
     }
 
     /**

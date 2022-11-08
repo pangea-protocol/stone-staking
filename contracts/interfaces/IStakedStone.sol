@@ -52,6 +52,14 @@ interface IStakedStoneEvent {
     event CancelReward(address indexed operator, uint256 indexed weekStartTime, uint256 amount);
 
     event ClaimDividend(address indexed owner, uint256 indexed epoch, address token, uint256 amount);
+
+    event SetDividend(uint256 indexed dividendId, uint256 startTime, uint256 recordDate, uint256 totalShare);
+
+    event ResetDividend(uint256 indexed dividendId);
+
+    event DepositDividend(uint256 indexed dividendId, address token, uint256 amount);
+
+    event ExecuteDividend(uint256 indexed dividendId, address[] token, uint256[] amount);
 }
 
 interface IStakedStone is IStakedStoneStruct, IStakedStoneEvent {

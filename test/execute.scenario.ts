@@ -13,9 +13,9 @@ import { ProtocolRevenueShare } from "../types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { OneInchFetcher } from "../utils/oneInch";
 import { sleep } from "../utils/utils";
-import {config} from "dotenv";
-import {SwapScannerFetcher} from "../utils/swapscanner";
-import {PangeaswapFetcher} from "../utils/pangeaswap";
+import { config } from "dotenv";
+import { SwapScannerFetcher } from "../utils/swapscanner";
+import { PangeaswapFetcher } from "../utils/pangeaswap";
 config();
 
 describe("SCENARIO:FORK", function () {
@@ -83,9 +83,20 @@ describe("SCENARIO:FORK", function () {
 
     beforeEach("DEPLOY & SETUP", async () => {
       oneInchFetcher = new OneInchFetcher(wklay.address, usdt.address);
-      swapScannerFetcher = new SwapScannerFetcher(process.env.SWAPSCANNER_PRIVATE_KEY!, wklay.address, usdt.address);
-      const multicall = Multicall__factory.connect("0x1A293190Fa8D3e61f8236e251afcd8725FA768C1", ethers.provider)
-      pangeaswapFetcher = new PangeaswapFetcher(multicall, wklay.address, usdt.address);
+      swapScannerFetcher = new SwapScannerFetcher(
+        process.env.SWAPSCANNER_PRIVATE_KEY!,
+        wklay.address,
+        usdt.address
+      );
+      const multicall = Multicall__factory.connect(
+        "0x1A293190Fa8D3e61f8236e251afcd8725FA768C1",
+        ethers.provider
+      );
+      pangeaswapFetcher = new PangeaswapFetcher(
+        multicall,
+        wklay.address,
+        usdt.address
+      );
 
       protocolRevenue = (await (
         await ethers.getContractFactory("ProtocolRevenueShare", user)
@@ -161,19 +172,19 @@ describe("SCENARIO:FORK", function () {
 
         await sleep(300);
         const resp = await oneInchFetcher.swap(
-              feeToken,
-              usdt.address,
-              protocolRevenue.address,
-              revenue.amount
+          feeToken,
+          usdt.address,
+          protocolRevenue.address,
+          revenue.amount
         );
 
         if (resp.estimatedAmount.gt(1_100_000)) {
           try {
             await protocolRevenue.share(
-                feeToken,
-                applySlippage(resp.estimatedAmount, 10000),
-                resp.to,
-                resp.data
+              feeToken,
+              applySlippage(resp.estimatedAmount, 10000),
+              resp.to,
+              resp.data
             );
           } catch (e) {
             console.error(e);
@@ -195,17 +206,17 @@ describe("SCENARIO:FORK", function () {
       for (const feeToken of feeTokens) {
         const revenue = await protocolRevenue.allocateRevenue(feeToken);
         const resp = await oneInchFetcher.swap(
-                feeToken,
-                usdt.address,
-                protocolRevenue.address,
-                revenue.amount
+          feeToken,
+          usdt.address,
+          protocolRevenue.address,
+          revenue.amount
         );
 
         await protocolRevenue.share(
-            feeToken,
-            applySlippage(resp.estimatedAmount, 100),
-            resp.to,
-            resp.data
+          feeToken,
+          applySlippage(resp.estimatedAmount, 100),
+          resp.to,
+          resp.data
         );
       }
 
@@ -224,23 +235,22 @@ describe("SCENARIO:FORK", function () {
       for (const feeToken of feeTokens) {
         const revenue = await protocolRevenue.allocateRevenue(feeToken);
         const resp = await oneInchFetcher.swap(
-              feeToken,
-              usdt.address,
-              protocolRevenue.address,
-              revenue.amount
+          feeToken,
+          usdt.address,
+          protocolRevenue.address,
+          revenue.amount
         );
 
         await protocolRevenue.share(
-            feeToken,
-            applySlippage(resp.estimatedAmount, 100),
-            resp.to,
-            resp.data
+          feeToken,
+          applySlippage(resp.estimatedAmount, 100),
+          resp.to,
+          resp.data
         );
       }
       console.log(`DAO FUND : ${await usdt.balanceOf(daoFund.address)}`);
       console.log(`GROWTH FUND : ${await usdt.balanceOf(growthFund.address)}`);
     });
-
 
     /**
      * 현재는 항상 실패 => allowance를 미리 취득해야 필요한 approval을 반환해주기 때문
@@ -285,17 +295,17 @@ describe("SCENARIO:FORK", function () {
       for (const feeToken of feeTokens) {
         const revenue = await protocolRevenue.allocateRevenue(feeToken);
         const resp = await pangeaswapFetcher.swap(
-            feeToken,
-            usdt.address,
-            protocolRevenue.address,
-            revenue.amount
+          feeToken,
+          usdt.address,
+          protocolRevenue.address,
+          revenue.amount
         );
 
         await protocolRevenue.share(
-            feeToken,
-            applySlippage(resp.estimatedAmount, 100),
-            resp.to,
-            resp.data
+          feeToken,
+          applySlippage(resp.estimatedAmount, 100),
+          resp.to,
+          resp.data
         );
       }
       console.log(`DAO FUND : ${await usdt.balanceOf(daoFund.address)}`);
@@ -313,17 +323,17 @@ describe("SCENARIO:FORK", function () {
       for (const feeToken of feeTokens) {
         const revenue = await protocolRevenue.allocateRevenue(feeToken);
         const resp = await pangeaswapFetcher.swap(
-            feeToken,
-            usdt.address,
-            protocolRevenue.address,
-            revenue.amount
+          feeToken,
+          usdt.address,
+          protocolRevenue.address,
+          revenue.amount
         );
 
         await protocolRevenue.share(
-            feeToken,
-            applySlippage(resp.estimatedAmount, 100),
-            resp.to,
-            resp.data
+          feeToken,
+          applySlippage(resp.estimatedAmount, 100),
+          resp.to,
+          resp.data
         );
       }
       console.log(`DAO FUND : ${await usdt.balanceOf(daoFund.address)}`);
