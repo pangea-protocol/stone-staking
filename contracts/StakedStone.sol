@@ -28,7 +28,7 @@ import "./libraries/FixedPoint.sol";
 
 
    - setCooldownPeriod(period)
-     : unstake에서 withdraw까지의 기간
+     : unstake에서 withdraw까지의 기간을 지정. default : 7 days 소요
 
  1. Holder Side
 
@@ -68,7 +68,7 @@ import "./libraries/FixedPoint.sol";
 
    2. Holder Side
 
-      - claimableDividend(epoch)
+      - allocatedDividend(epoch)
         : 해당 epoch에서 받을 수 있는 배당금 토큰 조회
 
       - claimDividend(epoch)
@@ -90,10 +90,10 @@ import "./libraries/FixedPoint.sol";
 
     2. Holder Side
 
-      - claimableReward(epoch)
+      - claimableReward(owner)
         : 현재 받을 수 있는 리워드 량 조회
 
-      - claimReward(epoch)
+      - claimReward()
         : 리워드 수령
 
  */
@@ -456,7 +456,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     /**
      * @notice 배당금액 계산하기
      */
-    function claimableDividend(
+    function allocatedDividend(
         address owner,
         uint256 epoch
     ) external view returns (
