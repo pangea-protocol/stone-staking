@@ -34,7 +34,8 @@ describe("REWARD UNIT TEST", async () => {
       await ethers.getContractFactory("StakedStone")
     ).deploy()) as StakedStone;
 
-    await stakedStone.initialize(stone.address);
+    const timestamp = (await ethers.provider.getBlock("latest")).timestamp;
+    await stakedStone.initialize(stone.address, timestamp);
 
     snapshotId = await ethers.provider.send("evm_snapshot", []);
   });

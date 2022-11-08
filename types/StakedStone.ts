@@ -49,7 +49,7 @@ export interface StakedStoneInterface extends utils.Interface {
     "getRoleAdmin(bytes32)": FunctionFragment;
     "grantRole(bytes32,address)": FunctionFragment;
     "hasRole(bytes32,address)": FunctionFragment;
-    "initialize(address)": FunctionFragment;
+    "initialize(address,uint256)": FunctionFragment;
     "multicall(bytes[])": FunctionFragment;
     "reStake()": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
@@ -110,7 +110,10 @@ export interface StakedStoneInterface extends utils.Interface {
     functionFragment: "hasRole",
     values: [BytesLike, string]
   ): string;
-  encodeFunctionData(functionFragment: "initialize", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "initialize",
+    values: [string, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "multicall",
     values: [BytesLike[]]
@@ -432,6 +435,7 @@ export interface StakedStone extends BaseContract {
 
     initialize(
       _token: string,
+      _startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -556,6 +560,7 @@ export interface StakedStone extends BaseContract {
 
   initialize(
     _token: string,
+    _startTime: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -679,7 +684,11 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    initialize(_token: string, overrides?: CallOverrides): Promise<void>;
+    initialize(
+      _token: string,
+      _startTime: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     multicall(data: BytesLike[], overrides?: CallOverrides): Promise<string[]>;
 
@@ -885,6 +894,7 @@ export interface StakedStone extends BaseContract {
 
     initialize(
       _token: string,
+      _startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -1021,6 +1031,7 @@ export interface StakedStone extends BaseContract {
 
     initialize(
       _token: string,
+      _startTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

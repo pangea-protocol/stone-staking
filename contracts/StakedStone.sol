@@ -38,13 +38,16 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
 
     mapping(address => RewardSnapshot) private _userRewardSnapshot;
 
-    uint256 private initialCheckpoint;
+    uint256 private startTime;
 
-    function initialize(address _token) external initializer {
+    function initialize(
+        address _token,
+        uint256 _startTime
+    ) external initializer {
         token = _token;
         cooldownPeriod = 7 days;
 
-        initialCheckpoint = weekStartTime(block.timestamp);
+        startTime = _startTime;
 
         __AccessControl_init();
         _setupRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, msg.sender);
@@ -58,9 +61,9 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     }
 
     /**
-     * @notice deposit for distributing tokens linearly for 1 week from startTime
+     * @notice deposit the STONE to be distributed linearly for 1 week
      * @param amount amount to deposit
-     * @param startTime The start time of distribution, `startTime % 604,800 == 0`
+     * @param startTime The start time of distribution. should always satisfy UTC 00:00. (startTime % 604,800 == 0)
      */
     function depositReward(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
         require(startTime % 7 days == 0, "startTime % 7 days != 0");
@@ -74,7 +77,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     }
 
     /**
-     * @notice Retrieve undistributed token
+     * @notice Retrieve undistributed STONE
      */
     function cancelReward(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
         require(startTime >= block.timestamp, "too late");
@@ -116,7 +119,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
 
     function calculateRewardToDistribute() internal view returns (uint256 amount) {
         uint256 _checkpoint = _rewardCheckpoint;
-        if (_checkpoint == 0) _checkpoint = initialCheckpoint;
+        if (_checkpoint == 0) _checkpoint = weekStartTime(startTime);
 
         uint256 currentWeekStartTime = weekStartTime(block.timestamp);
         if (_checkpoint < currentWeekStartTime) {
