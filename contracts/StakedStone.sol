@@ -84,27 +84,27 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
      * @param startTime The start time of distribution. should always satisfy UTC 00:00. (startTime % 604,800 == 0)
      */
     function depositReward(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
-        require(initialTime % 7 days == 0, "startTime % 7 days != 0");
-        require(initialTime >= block.timestamp, "too late");
+        require(startTime % 7 days == 0, "startTime % 7 days != 0");
+        require(startTime >= block.timestamp, "too late");
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        totalRewardPerWeek[initialTime] += amount;
+        totalRewardPerWeek[startTime] += amount;
 
-        emit DepositReward(msg.sender, initialTime, amount);
+        emit DepositReward(msg.sender, startTime, amount);
     }
 
     /**
      * @notice Retrieve undistributed STONE
      */
     function cancelReward(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
-        require(initialTime >= block.timestamp, "too late");
+        require(startTime >= block.timestamp, "too late");
 
-        totalRewardPerWeek[initialTime] -= amount;
+        totalRewardPerWeek[startTime] -= amount;
 
         IERC20(token).transfer(msg.sender, amount);
 
-        emit CancelReward(msg.sender, initialTime, amount);
+        emit CancelReward(msg.sender, startTime, amount);
     }
 
 
