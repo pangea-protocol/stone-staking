@@ -422,7 +422,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "_startTime",
+        "name": "_initialTime",
         "type": "uint256"
       }
     ],
@@ -510,19 +510,6 @@
     "name": "revokeRole",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "rewardGrowthGlobal",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

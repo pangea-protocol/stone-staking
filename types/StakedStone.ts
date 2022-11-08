@@ -55,7 +55,6 @@ export interface StakedStoneInterface extends utils.Interface {
     "renounceRole(bytes32,address)": FunctionFragment;
     "requestOwnerOf(uint256)": FunctionFragment;
     "revokeRole(bytes32,address)": FunctionFragment;
-    "rewardGrowthGlobal()": FunctionFragment;
     "setCooldownPeriod(uint256)": FunctionFragment;
     "stake(uint256)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
@@ -130,10 +129,6 @@ export interface StakedStoneInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "revokeRole",
     values: [BytesLike, string]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "rewardGrowthGlobal",
-    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "setCooldownPeriod",
@@ -221,10 +216,6 @@ export interface StakedStoneInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "rewardGrowthGlobal",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "setCooldownPeriod",
     data: BytesLike
@@ -435,7 +426,7 @@ export interface StakedStone extends BaseContract {
 
     initialize(
       _token: string,
-      _startTime: BigNumberish,
+      _initialTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -464,8 +455,6 @@ export interface StakedStone extends BaseContract {
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    rewardGrowthGlobal(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     setCooldownPeriod(
       period: BigNumberish,
@@ -560,7 +549,7 @@ export interface StakedStone extends BaseContract {
 
   initialize(
     _token: string,
-    _startTime: BigNumberish,
+    _initialTime: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -589,8 +578,6 @@ export interface StakedStone extends BaseContract {
     account: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
-
-  rewardGrowthGlobal(overrides?: CallOverrides): Promise<BigNumber>;
 
   setCooldownPeriod(
     period: BigNumberish,
@@ -686,7 +673,7 @@ export interface StakedStone extends BaseContract {
 
     initialize(
       _token: string,
-      _startTime: BigNumberish,
+      _initialTime: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -710,8 +697,6 @@ export interface StakedStone extends BaseContract {
       account: string,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    rewardGrowthGlobal(overrides?: CallOverrides): Promise<BigNumber>;
 
     setCooldownPeriod(
       period: BigNumberish,
@@ -894,7 +879,7 @@ export interface StakedStone extends BaseContract {
 
     initialize(
       _token: string,
-      _startTime: BigNumberish,
+      _initialTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -923,8 +908,6 @@ export interface StakedStone extends BaseContract {
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
-
-    rewardGrowthGlobal(overrides?: CallOverrides): Promise<BigNumber>;
 
     setCooldownPeriod(
       period: BigNumberish,
@@ -1031,7 +1014,7 @@ export interface StakedStone extends BaseContract {
 
     initialize(
       _token: string,
-      _startTime: BigNumberish,
+      _initialTime: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1059,10 +1042,6 @@ export interface StakedStone extends BaseContract {
       role: BytesLike,
       account: string,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    rewardGrowthGlobal(
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     setCooldownPeriod(

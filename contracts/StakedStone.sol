@@ -11,6 +11,9 @@ import "./interfaces/IStakedStone.sol";
 import "./libraries/FullMath.sol";
 import "./libraries/FixedPoint.sol";
 
+/**
+ * StakedStone Contract created to distribute rewards to STONE holders
+ */
 contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     using SafeERC20 for IERC20;
 
@@ -38,24 +41,39 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
 
     mapping(address => RewardSnapshot) private _userRewardSnapshot;
 
-    uint256 private startTime;
+    uint256 private initialTime;
 
     function initialize(
         address _token,
-        uint256 _startTime
+        uint256 _initialTime
     ) external initializer {
         token = _token;
         cooldownPeriod = 7 days;
 
-        startTime = _startTime;
+        initialTime = _initialTime;
 
         __AccessControl_init();
         _setupRole(AccessControlUpgradeable.DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    modifier settleReward(address owner) {
-        updateRewardGrowthGlobal();
-        updateRewardCheckpoint(owner);
+    modifier updateRewardCheckpoint(address owner) {
+        uint256 growthGlobal;
+        if (_rewardCheckpoint < block.timestamp) {
+            uint256 amount = _calculateRewardToDistribute();
+
+            // @dev Rewards accumulated while there is no staked supply
+            // are distributed later
+            amount = _updatePendingReward(amount);
+            growthGlobal = _rewardGrowthGlobal(amount);
+
+            _rewardGrowthGlobalLast = growthGlobal;
+            _rewardCheckpoint = block.timestamp;
+        } else {
+            // @dev Skip if the block has been updated in advance. (gas efficient policy)
+            growthGlobal = _rewardGrowthGlobalLast;
+        }
+
+        _updateRewardSnapshot(owner, growthGlobal);
 
         _;
     }
@@ -66,60 +84,61 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
      * @param startTime The start time of distribution. should always satisfy UTC 00:00. (startTime % 604,800 == 0)
      */
     function depositReward(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
-        require(startTime % 7 days == 0, "startTime % 7 days != 0");
-        require(startTime >= block.timestamp, "too late");
+        require(initialTime % 7 days == 0, "startTime % 7 days != 0");
+        require(initialTime >= block.timestamp, "too late");
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        totalRewardPerWeek[startTime] += amount;
+        totalRewardPerWeek[initialTime] += amount;
 
-        emit DepositReward(msg.sender, startTime, amount);
+        emit DepositReward(msg.sender, initialTime, amount);
     }
 
     /**
      * @notice Retrieve undistributed STONE
      */
     function cancelReward(uint256 amount, uint256 startTime) external onlyRole(MANAGER_ROLE) {
-        require(startTime >= block.timestamp, "too late");
+        require(initialTime >= block.timestamp, "too late");
 
-        totalRewardPerWeek[startTime] -= amount;
+        totalRewardPerWeek[initialTime] -= amount;
 
         IERC20(token).transfer(msg.sender, amount);
 
-        emit CancelReward(msg.sender, startTime, amount);
+        emit CancelReward(msg.sender, initialTime, amount);
     }
 
-    function updateRewardGrowthGlobal() internal {
-        if (_rewardCheckpoint >= block.timestamp) return;
 
-        _rewardGrowthGlobalLast = rewardGrowthGlobal();
-        _rewardCheckpoint = block.timestamp;
-        if (_totalSupply > 0 && _pendingReward > 0) _pendingReward = 0;
+    function _updatePendingReward(uint256 amount) internal returns (uint256) {
+        if (_totalSupply > 0) {
+            if (_pendingReward > 0) {
+                amount += _pendingReward;
+                _pendingReward = 0;
+            }
+        } else {
+            _pendingReward += amount;
+        }
+        return amount;
     }
 
-    function updateRewardCheckpoint(address owner) internal {
-        uint256 growthGlobal = _rewardGrowthGlobalLast;
-
+    function _updateRewardSnapshot(address owner, uint256 growthGlobal) internal {
         RewardSnapshot storage snapshot = _userRewardSnapshot[owner];
-
         snapshot._owed += FullMath.mulDiv(
             growthGlobal - snapshot._growthGlobalLast, _balanceOf[owner], FixedPoint.Q96
         );
         snapshot._growthGlobalLast = growthGlobal;
     }
 
-    function rewardGrowthGlobal() public view returns (uint256) {
+    function _rewardGrowthGlobal(uint256 amount) private view returns (uint256 growthGlobal) {
+        growthGlobal = _rewardGrowthGlobalLast;
+
         if (_totalSupply > 0) {
-            uint256 amount = calculateRewardToDistribute();
-            return _rewardGrowthGlobalLast + FullMath.mulDiv(amount, FixedPoint.Q96, _totalSupply);
-        } else {
-            return _rewardGrowthGlobalLast;
+            growthGlobal += FullMath.mulDiv(amount, FixedPoint.Q96, _totalSupply);
         }
     }
 
-    function calculateRewardToDistribute() internal view returns (uint256 amount) {
+    function _calculateRewardToDistribute() private view returns (uint256 amount) {
         uint256 _checkpoint = _rewardCheckpoint;
-        if (_checkpoint == 0) _checkpoint = weekStartTime(startTime);
+        if (_checkpoint == 0) _checkpoint = weekStartTime(initialTime);
 
         uint256 currentWeekStartTime = weekStartTime(block.timestamp);
         if (_checkpoint < currentWeekStartTime) {
@@ -132,8 +151,6 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
         amount += (
             totalRewardPerWeek[currentWeekStartTime] * (block.timestamp - _checkpoint) / 7 days
         );
-
-        amount += _pendingReward;
     }
 
     /**
@@ -186,7 +203,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     /**
      * @notice Stakes Stone for msg.sender
      */
-    function stake(uint256 amount) external settleReward(msg.sender) {
+    function stake(uint256 amount) external updateRewardCheckpoint(msg.sender) {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         _stake(msg.sender, amount);
@@ -202,7 +219,7 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     /**
      * @notice request unstaking to msg.sender
      */
-    function unstake(uint256 amount) external settleReward(msg.sender) {
+    function unstake(uint256 amount) external updateRewardCheckpoint(msg.sender) {
         _balanceOf[msg.sender] -= amount;
         _totalSupply -= amount;
 
@@ -250,12 +267,12 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
     /**
      * @notice Re-stake claimable Stone
      */
-    function reStake() external settleReward(msg.sender) {
+    function reStake() external updateRewardCheckpoint(msg.sender) {
         uint256 amount = _claimReward(msg.sender);
         _stake(msg.sender, amount);
     }
 
-    function claimReward() external settleReward(msg.sender) {
+    function claimReward() external updateRewardCheckpoint(msg.sender) {
         uint256 amount = _claimReward(msg.sender);
         IERC20(token).safeTransfer(msg.sender, amount);
     }
@@ -270,10 +287,11 @@ contract StakedStone is Multicall, AccessControlUpgradeable, IStakedStone {
      * @notice calculate claimable STONE reward
      */
     function claimableReward(address owner) external view returns (uint256) {
+        uint256 amount = _calculateRewardToDistribute() + _pendingReward;
         RewardSnapshot memory snapshot = _userRewardSnapshot[owner];
 
         return FullMath.mulDiv(
-            rewardGrowthGlobal() - snapshot._growthGlobalLast, _balanceOf[owner], FixedPoint.Q96
+            _rewardGrowthGlobal(amount) - snapshot._growthGlobalLast, _balanceOf[owner], FixedPoint.Q96
         ) + snapshot._owed;
     }
 
