@@ -6,7 +6,7 @@ import { defaultAbiCoder } from "ethers/lib/utils";
 import { jumpToNextBlockTimestamp } from "./utils";
 import { BigNumber } from "ethers";
 
-describe.only("DIVIDEND UNIT TEST", async () => {
+describe("DIVIDEND UNIT TEST", async () => {
   let _snapshotId: string;
 
   let deployer: SignerWithAddress;
@@ -229,6 +229,64 @@ describe.only("DIVIDEND UNIT TEST", async () => {
       expect(info.amounts[0]).to.be.eq(amount.mul(2));
       expect(info.tokens[1]).to.be.eq(token1.address);
       expect(info.amounts[1]).to.be.eq(amount.mul(2));
+    });
+
+    it("reset after depositDividend", async () => {
+      const amount = ethers.utils.parseEther("10");
+      await stakedStone
+        .connect(manager)
+        .depositDividend(token0.address, amount);
+
+      const before = await token0.balanceOf(manager.address);
+      await stakedStone.connect(manager).resetDividendRecordDate();
+      const after = await token0.balanceOf(manager.address);
+
+      const info = await stakedStone.readyDividendInfo();
+
+      expect(after.sub(before)).to.be.eq(amount);
+      expect(info.tokens.length).to.be.eq(0);
+      expect(info.amounts.length).to.be.eq(0);
+    });
+  });
+
+  describe("# EXECUTE", async () => {
+    beforeEach(async () => {
+      await jumpToNextBlockTimestamp(openDate);
+
+      const amount = ethers.utils.parseEther("10");
+      await stakedStone.connect(user0).stake(amount);
+
+      await stakedStone.connect(manager).setDividendRecordDate();
+    });
+
+    it("revert: NOT SET", async () => {
+      await stakedStone.connect(manager).resetDividendRecordDate();
+
+      await expect(
+        stakedStone.connect(manager).executeDividend()
+      ).to.be.revertedWith("NOT SET");
+    });
+
+    it("revert: NO DEPOSIT", async () => {
+      await expect(
+        stakedStone.connect(manager).executeDividend()
+      ).to.be.revertedWith("NO DEPOSIT");
+    });
+
+    it("execute successful", async () => {
+      const amount = ethers.utils.parseEther("10");
+      await stakedStone
+        .connect(manager)
+        .depositDividend(token0.address, amount);
+
+      await stakedStone.connect(manager).executeDividend();
+
+      expect(await stakedStone.totalDividendEpoch()).to.be.eq(1);
+      const info = await stakedStone.dividendInfo(0);
+
+      expect(info.tokens[0]).to.be.eq(token0.address);
+      expect(info.amounts[0]).to.be.eq(amount);
+      expect(info.totalShare).to.be.eq(ethers.utils.parseEther("10"));
     });
   });
 });
