@@ -4,6 +4,8 @@
 
 판게아스왑의 프로토콜 수익들을 STONE 홀더들에게 분배하는 시스템
 
+---
+
 ## StakedStone 컨트랙트
 
 ### 1. 예치 프로세스
@@ -128,34 +130,56 @@ function executeDividend() external;
 ````
 
 
-
 #### 리워드 프로세스
 
 `리워드`는 매주 배치되어 있는 거버넌스 토큰을 예치한 홀더에게 제공하는 프로세스로,매 블럭마다 선형적으로 분배된다.
 
 **Holder Side**
 
-- `claimableReward(owner)` : 현재 받을 수 있는 리워드 량 조회
+#### 리워드 수령
 
-- `accumulativeUserReward(owner)` : 누적 수령 리워드 크기 조회
+````solidity
+function claimReward() external returns (uint256 amount);
+````
 
-- `claimReward()` : 리워드 수령
+#### 리워드 재예치
 
-- `reStake()` : 리워드를 재예치
+````solidity
+function reStake() external;
+````
+
+#### 현재 받을 수 있는 리워드 량 조회
+
+````solidity
+function claimableReward(address owner) external view returns (uint256);
+```` 
+
+#### 누적 수령 리워드 조회
+
+````solidity
+function accumulativeUserReward(address owner) external view returns (uint256);
+````
 
 **Manager Side**
 
-- `depositReward(amount, startTime)` : 리워드 납입 (startTime에서 부터 1주일간 분배)
+#### 리워드 납입 (startTime에서 부터 1주일간 분배)
+````solidity
+function depositReward(uint256 amount, uint256 startTime) external;
+````
 
-- `cancelReward(amount, startTime)` : 분배되지 않은 주차의 리워드 회수
+#### 분배되지 않은 주차의 리워드 회수
 
+````solidity
+function cancelReward(uint256 amount, uint256 startTime) external;
+```` 
+
+---
 
 ## ProtocolRevenueShare 컨트랙트
 
-2 단계로 나뉘어 호출됩니다. 주기적으로 풀에서 수수료 토큰들을 수취한 후,
-revenueToken으로 일괄적으로 스왑하여, GrowthFund와 DaoFund로 분배합니다.
+판게아스왑 내 풀에서 프로토콜 수수료를 수취하고, 모아서 revenueToken으로 스왑한 후, GrowthFund와 DaoFund로 분배
 
-### 1. 각 풀 별 수수료 수취
+#### 각 풀 별 수수료 수취
 
 ````solidity
 function collectByPage(uint256 start, uint256 limit) external;
@@ -164,7 +188,7 @@ function collectByPage(uint256 start, uint256 limit) external;
 * masterDeployer에 등록된 판게아스왑의 모든 풀들을 순회하며 호출
 * `collectFrom(pool)`을 호출하여 protocol 수수료 수취
 
-### 2. revenueToken으로 스왑 후 GrowthFund와 DaoFund로 분배
+#### revenueToken으로 스왑 후 GrowthFund와 DaoFund로 분배
 
 ````solidity
 function share(address feeToken, uint256 minimumOutput, address payable broker, bytes calldata data) external;
