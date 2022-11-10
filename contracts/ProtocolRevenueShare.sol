@@ -14,23 +14,35 @@ import "./libraries/FullMath.sol";
 
 
 /**
+ *
  * 판게아스왑 프로토콜 정산
- * --------------------------
+ *
+ * 2 단계로 나뉘어 호출됩니다. 주기적으로 풀에서 수수료 토큰들을 수취한 후,
+ * revenueToken으로 일괄적으로 스왑하여, GrowthFund와 DaoFund로 분배합니다.
  *
  * 1. 각 풀 별 수수료 수취
  *
- *    * masterDeployer의 모든 풀들을 돌아가면서 호출
- *    * `collectFrom(pool)`을 호출하여 protocol 수수료 수취
+ *    ````solidity
+ *    function collectByPage(uint256 start, uint256 limit) external;
+ *    ````
  *
- * 2. revenueToken으로 스왑하고, 즉시 GrowthFund와 DaoFund로 보내기
+ *    * masterDeployer에 등록된 판게아스왑의 모든 풀들을 순회하며 호출
+ *    * `collectFrom(pool)`을 호출하여 protocol 수수료 수취
+ *    * 사전에 masterDeployer에서 protocolFeeTo를 변경
+ *
+ * 2. revenueToken으로 스왑 후 GrowthFund와 DaoFund로 분배
+ *
+ *    ````solidity
+ *    function share(address feeToken, uint256 minimumOutput, address payable broker, bytes calldata data) external;
+ *    ````
  *
  *    `growthFund`에 할당될 비율
  *     [1] 풀 별 growthFundRate가 지정되어 있는 경우에는 쓰고,
  *     [2] 아닌 경우에는 팩토리 별 growthFundRate를 사용
  *
- * ------------------------------------------
+ * ------------------------------------------------------------------------------------
  *
- * Growth Fund
+ * Growth Fund란?
  *
  * 판게아 스왑의 성장을 위해 사용하는 목적의 자금으로,
  * 주요 용처는 판게아 스왑의 TVL, Trading Volume을 만들어 줄 수 있는 파트너 프로토콜과의 협업을 위한 자금,
@@ -92,7 +104,7 @@ contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
         uint256 amount
     );
 
-    // @notice 토큰을 스왑 후 분배 후 이벤트 던지기
+    // @notice 토큰을 스왑 후 분배 시 호출
     event Share(
         address indexed feeToken,
         address indexed revenueToken,
@@ -161,7 +173,7 @@ contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
         _setupGrowthFundRate[_pool] = true;
     }
 
-    // @notice 팩토리 별 프로토콜 수익 중 growth fund에 할당할 기본 비율, 풀 별 growthFundRate가 미지정인 경우 이용됩니다.
+    // @notice 팩토리 별 프로토콜 수익 중 growth fund에 할당할 기본 비율, 풀 별 growthFundRate가 미지정인 경우 이용
     function setFactoryGrowthFundRate(address _factory, uint256 _rate) external onlyRole(MANAGER_ROLE) {
         require(_factory != address(0), "NOT_ZERO");
         require(_rate <= BIPS, "TOO_BIG");
@@ -234,8 +246,8 @@ contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
     function share(
         address feeToken,          // @dev fee Token
         uint256 minimumOutput,  // @dev 스왑할 경우, 슬리피지를 고려한 output
-        address payable broker, // @dev SwapScanner or 1Inch contracts
-        bytes calldata data     // @dev data from DEX Aggregators
+        address payable broker, // @dev pangeaswap poolRouter or SwapScanner or 1Inch contracts
+        bytes calldata data     // @dev calldata from DEX Aggregators or pangeaswap
     ) external onlyRole(OP_ROLE) {
         // 1. collect된 protocol revenue를 가져오기
         uint256 amount = IERC20(feeToken).balanceOf(address(this));
