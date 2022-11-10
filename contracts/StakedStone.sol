@@ -468,8 +468,6 @@ contract StakedStone is
      * @notice 배당금 수령하기
      */
     function claimDividend(uint256 epoch) external updateUserSnapshot(msg.sender) {
-        require(epoch < _dividendHistory.length, "NOT EXIST DIVIDEND");
-
         DividendSnapshot memory snapshot = _userDividendSnapshot[msg.sender][epoch];
         require(!snapshot.isPaid, "ALREADY PAID");
         require(snapshot.share > 0, "NO SHARE");
@@ -501,7 +499,6 @@ contract StakedStone is
         address[] memory tokens,
         uint256[] memory amounts
     ) {
-        require(epoch < _dividendHistory.length, "NOT EXIST DIVIDEND");
         Dividend memory epochDividend = _dividendHistory[epoch];
 
         tokens = epochDividend.tokens;
@@ -531,7 +528,7 @@ contract StakedStone is
         rewardGrowthGlobalLast = growthGlobal;
 
         // @dev Skip if the block has been updated in advance. (gas efficient policy)
-        if (_checkpoint >= block.timestamp) continue;
+        if (_checkpoint >= block.timestamp) return growthGlobal;
 
         totalShare += (block.timestamp - _checkpoint) * _totalSupply;
         checkpoint = block.timestamp;
