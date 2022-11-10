@@ -96,7 +96,7 @@ interface IStakedStone is IStakedStoneStruct, IStakedStoneEvent {
     /**
      * @notice cooldown period가 지난 unstaking 요청에 대한 stone 인출하기
      */
-    function withdraw(uint256 requestId) external;
+    function withdraw(uint256 requestId) external returns (uint256);
 
     /**
      * @notice 리워드(스톤) 재예치하기
@@ -106,7 +106,7 @@ interface IStakedStone is IStakedStoneStruct, IStakedStoneEvent {
     /**
      * @notice 리워드(스톤) 수령하기
      */
-    function claimReward() external;
+    function claimReward() external returns (uint256);
 
     /**
      * @notice calculate claimable STONE reward

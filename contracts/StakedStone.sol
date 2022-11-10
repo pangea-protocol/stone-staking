@@ -197,7 +197,7 @@ contract StakedStone is
      */
     function setDividendRecordDate() external onlyRole(MANAGER_ROLE) {
         require(currentDividend.recordDate == 0, "ALREADY SET");
-        require(block.timestamp >= checkpoint, "NOT START");
+        require(block.timestamp >= openDate, "NOT START");
         _updateGrowthGlobal();
 
         currentDividend.startDate = _dividendHistory.length > 0 ? _dividendHistory[_dividendHistory.length-1].recordDate : openDate;
@@ -382,13 +382,14 @@ contract StakedStone is
     /**
      * @notice withdraw unstaked Stone after cooldown
      */
-    function withdraw(uint256 requestId) external {
+    function withdraw(uint256 requestId) external returns (uint256 amount){
         UnstakingRequest memory request = _unstakingRequests[requestId];
         require(!request.isClaimed, "ALREADY CLAIMED");
         require(_requestOwnerOf[requestId] == msg.sender, "NOT OWNER");
         require(request.requestTs + cooldownPeriod <= block.timestamp, "NEED COOLDOWN");
+        amount = request.amount;
 
-        IERC20(stone).safeTransfer(msg.sender, request.amount);
+        IERC20(stone).safeTransfer(msg.sender, amount);
 
         _unstakingRequests[requestId].isClaimed = true;
 
@@ -405,7 +406,7 @@ contract StakedStone is
         delete _ownedRequestsIndex[requestIndex];
         delete _ownedRequests[msg.sender][lastRequestIndex];
 
-        emit Withdraw(msg.sender, request.amount);
+        emit Withdraw(msg.sender, amount);
     }
 
     /**
@@ -419,8 +420,8 @@ contract StakedStone is
     /**
      * @notice claim allocated STONE reward
      */
-    function claimReward() external updateUserSnapshot(msg.sender) {
-        uint256 amount = _claimReward(msg.sender);
+    function claimReward() external updateUserSnapshot(msg.sender) returns (uint256 amount) {
+        amount = _claimReward(msg.sender);
         IERC20(stone).safeTransfer(msg.sender, amount);
     }
 
@@ -507,21 +508,18 @@ contract StakedStone is
 
     function _updateGrowthGlobal() internal returns (uint256 growthGlobal) {
         uint256 _checkpoint = checkpoint;
+        uint256 amount = _calculateRewardToDistribute();
+
+        // @dev Rewards accumulated while there is no staked supply
+        // are distributed later
+        amount = _updatePendingReward(amount);
+        growthGlobal = _rewardGrowthGlobal(amount);
+        rewardGrowthGlobalLast = growthGlobal;
+
         if (_checkpoint < block.timestamp) {
-            uint256 amount = _calculateRewardToDistribute();
-
-            // @dev Rewards accumulated while there is no staked supply
-            // are distributed later
-            amount = _updatePendingReward(amount);
-            growthGlobal = _rewardGrowthGlobal(amount);
-
-            totalShare += (block.timestamp - _checkpoint) * _totalSupply;
-
-            rewardGrowthGlobalLast = growthGlobal;
-            checkpoint = block.timestamp;
-        } else {
             // @dev Skip if the block has been updated in advance. (gas efficient policy)
-            growthGlobal = rewardGrowthGlobalLast;
+            totalShare += (block.timestamp - _checkpoint) * _totalSupply;
+            checkpoint = block.timestamp;
         }
     }
 
@@ -610,17 +608,21 @@ contract StakedStone is
 
     function _calculateRewardToDistribute() private view returns (uint256 amount) {
         uint256 _checkpoint = checkpoint;
+        uint256 currentEpoch = (block.timestamp / 7 days) * 7 days;
 
-        uint256 currentWeekStartTime = (block.timestamp / 7 days) * 7 days;
-        if (_checkpoint < currentWeekStartTime) {
-            for (uint256 i = _checkpoint; i < currentWeekStartTime; i += 7 days) {
-                amount += totalRewardPerWeek[i];
+        // @dev 과거 미정산된 Reward 재정산
+        if (_checkpoint < currentEpoch) {
+            uint256 _checkpointEpoch = (_checkpoint / 7 days) * 7 days;
+
+            for (uint256 _epoch = _checkpointEpoch; _epoch < currentEpoch; _epoch += 7 days) {
+                uint256 _nextEpoch = _epoch + 7 days;
+                amount += totalRewardPerWeek[_epoch] * (_nextEpoch - _checkpoint) / 7 days;
+                _checkpoint = _nextEpoch;
             }
-            _checkpoint = currentWeekStartTime;
         }
 
         amount += (
-        totalRewardPerWeek[currentWeekStartTime] * (block.timestamp - _checkpoint) / 7 days
+        totalRewardPerWeek[currentEpoch] * (block.timestamp - _checkpoint) / 7 days
         );
     }
 }
