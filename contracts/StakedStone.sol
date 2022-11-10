@@ -396,7 +396,7 @@ contract StakedStone is
     /**
      * @notice withdraw unstaked Stone after cooldown
      */
-    function withdraw(uint256 requestId) external returns (uint256 amount){
+    function withdraw(uint256 requestId) external returns (uint256 amount) {
         UnstakingRequest memory request = unstakingRequests[requestId];
         require(!request.isClaimed, "ALREADY CLAIMED");
         require(requestOwnerOf[requestId] == msg.sender, "NOT OWNER");
@@ -494,12 +494,9 @@ contract StakedStone is
     }
 
     /**
-     * @notice 배당금액 계산하기
+     * @notice 주어진 배당 회차에 할당된 배당금액 계산
      */
-    function allocatedDividend(
-        address owner,
-        uint256 epoch
-    ) external view returns (
+    function allocatedDividend(address owner, uint256 epoch) external view returns (
         bool isPaid,
         address[] memory tokens,
         uint256[] memory amounts
@@ -533,11 +530,11 @@ contract StakedStone is
         growthGlobal = _rewardGrowthGlobal(amount);
         rewardGrowthGlobalLast = growthGlobal;
 
-        if (_checkpoint < block.timestamp) {
-            // @dev Skip if the block has been updated in advance. (gas efficient policy)
-            totalShare += (block.timestamp - _checkpoint) * _totalSupply;
-            checkpoint = block.timestamp;
-        }
+        // @dev Skip if the block has been updated in advance. (gas efficient policy)
+        if (_checkpoint >= block.timestamp) continue;
+
+        totalShare += (block.timestamp - _checkpoint) * _totalSupply;
+        checkpoint = block.timestamp;
     }
 
     function _calculateUserShare(
@@ -632,7 +629,7 @@ contract StakedStone is
         uint256 _checkpoint = checkpoint;
         uint256 currentEpoch = (block.timestamp / 7 days) * 7 days;
 
-        // @dev 과거 미정산된 Reward 재정산
+        // @dev 과거 미정산된 Reward 정산
         if (_checkpoint < currentEpoch) {
             uint256 _checkpointEpoch = (_checkpoint / 7 days) * 7 days;
 
