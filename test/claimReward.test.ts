@@ -3,7 +3,13 @@ import { StakedStone, Token } from "../types";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { defaultAbiCoder } from "ethers/lib/utils";
-import { BigNumber, ContractFunction, ContractTransaction } from "ethers";
+import { BigNumber } from "ethers";
+import {
+  jumpDays,
+  jumpToStartOfWeek,
+  multipleTxOnSameBlock,
+  WEEK,
+} from "./utils";
 
 /**
  * 리워드에 대한 세부 분배 규칙 시뮬레이션
@@ -21,7 +27,6 @@ import { BigNumber, ContractFunction, ContractTransaction } from "ethers";
  */
 describe("CLAIM REWARD UNIT TEST", async () => {
   let _snapshotId: string;
-  const WEEK = 604800;
 
   let deployer: SignerWithAddress;
   let manager: SignerWithAddress;
@@ -75,42 +80,6 @@ describe("CLAIM REWARD UNIT TEST", async () => {
     await network.provider.send("evm_revert", [_snapshotId]);
     _snapshotId = await ethers.provider.send("evm_snapshot", []);
   });
-
-  async function jumpToNextBlockTimestamp(time: number) {
-    await network.provider.send("evm_setNextBlockTimestamp", [time]);
-    await network.provider.send("evm_mine", []);
-  }
-
-  /**
-   * 동일 블럭 내에 트랜잭션 호출 ( hardhat 환경 내에서 복수개의 transaction을 밀어 넣기 )
-   * @param txs
-   */
-  async function multipleTxOnSameBlock(
-    ...txs: (() => Promise<ContractTransaction>)[]
-  ) {
-    await network.provider.send("evm_setAutomine", [false]);
-    for (const tx of txs) {
-      await tx();
-    }
-    await network.provider.send("evm_mine", []);
-    await network.provider.send("evm_setAutomine", [true]);
-  }
-
-  async function jumpToStartOfWeek(mine = true) {
-    const block = await ethers.provider.getBlock("latest");
-    const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
-    await network.provider.send("evm_setNextBlockTimestamp", [startTime]);
-    if (mine) {
-      await network.provider.send("evm_mine", []);
-    }
-  }
-
-  async function jumpDays(days: number, mine = true) {
-    await network.provider.send("evm_increaseTime", [86400 * days]);
-    if (mine) {
-      await network.provider.send("evm_mine", []);
-    }
-  }
 
   /**
    * 스톤 준비
