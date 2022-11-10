@@ -397,25 +397,6 @@
         "type": "address"
       }
     ],
-    "name": "_accumulativeUserReward",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      }
-    ],
     "name": "accumulativeUserReward",
     "outputs": [
       {
@@ -751,6 +732,29 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "readyDividend",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "startDate",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "recordDate",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalShare",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -772,7 +776,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "requestId",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -938,47 +942,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "requestId",
-        "type": "uint256"
-      }
-    ],
-    "name": "unstakingRequest",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "id",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "requestTs",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "isClaimed",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct IStakedStoneStruct.UnstakingRequest",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "owner",
         "type": "address"
@@ -1026,7 +989,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "owner",
+        "name": "",
         "type": "address"
       }
     ],
@@ -1036,6 +999,40 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "unstakingRequests",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requestTs",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isClaimed",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",

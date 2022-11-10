@@ -62,7 +62,6 @@ export interface StakedStoneInterface extends utils.Interface {
   functions: {
     "DEFAULT_ADMIN_ROLE()": FunctionFragment;
     "MANAGER_ROLE()": FunctionFragment;
-    "_accumulativeUserReward(address)": FunctionFragment;
     "accumulativeUserReward(address)": FunctionFragment;
     "allocatedDividend(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
@@ -81,6 +80,7 @@ export interface StakedStoneInterface extends utils.Interface {
     "initialize(address,uint256)": FunctionFragment;
     "multicall(bytes[])": FunctionFragment;
     "reStake()": FunctionFragment;
+    "readyDividend()": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
     "requestOwnerOf(uint256)": FunctionFragment;
     "resetDividendRecordDate()": FunctionFragment;
@@ -94,9 +94,9 @@ export interface StakedStoneInterface extends utils.Interface {
     "totalRewardPerWeek(uint256)": FunctionFragment;
     "totalSupply()": FunctionFragment;
     "unstake(uint256)": FunctionFragment;
-    "unstakingRequest(uint256)": FunctionFragment;
     "unstakingRequestByIndex(address,uint256)": FunctionFragment;
     "unstakingRequestCounts(address)": FunctionFragment;
+    "unstakingRequests(uint256)": FunctionFragment;
     "withdraw(uint256)": FunctionFragment;
   };
 
@@ -107,10 +107,6 @@ export interface StakedStoneInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "MANAGER_ROLE",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "_accumulativeUserReward",
-    values: [string]
   ): string;
   encodeFunctionData(
     functionFragment: "accumulativeUserReward",
@@ -179,6 +175,10 @@ export interface StakedStoneInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "reStake", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "readyDividend",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "renounceRole",
     values: [BytesLike, string]
   ): string;
@@ -225,16 +225,16 @@ export interface StakedStoneInterface extends utils.Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "unstakingRequest",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "unstakingRequestByIndex",
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "unstakingRequestCounts",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "unstakingRequests",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "withdraw",
@@ -247,10 +247,6 @@ export interface StakedStoneInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "MANAGER_ROLE",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "_accumulativeUserReward",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -308,6 +304,10 @@ export interface StakedStoneInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "multicall", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "reStake", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "readyDividend",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "renounceRole",
     data: BytesLike
   ): Result;
@@ -348,15 +348,15 @@ export interface StakedStoneInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "unstake", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "unstakingRequest",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "unstakingRequestByIndex",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "unstakingRequestCounts",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "unstakingRequests",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
@@ -544,13 +544,8 @@ export interface StakedStone extends BaseContract {
 
     MANAGER_ROLE(overrides?: CallOverrides): Promise<[string]>;
 
-    _accumulativeUserReward(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber]>;
-
     accumulativeUserReward(
-      owner: string,
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
@@ -643,6 +638,16 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    readyDividend(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber] & {
+        startDate: BigNumber;
+        recordDate: BigNumber;
+        totalShare: BigNumber;
+      }
+    >;
+
     renounceRole(
       role: BytesLike,
       account: string,
@@ -650,7 +655,7 @@ export interface StakedStone extends BaseContract {
     ): Promise<ContractTransaction>;
 
     requestOwnerOf(
-      requestId: BigNumberish,
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[string]>;
 
@@ -699,11 +704,6 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    unstakingRequest(
-      requestId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<[UnstakingRequestStructOutput]>;
-
     unstakingRequestByIndex(
       owner: string,
       index: BigNumberish,
@@ -711,9 +711,21 @@ export interface StakedStone extends BaseContract {
     ): Promise<[UnstakingRequestStructOutput]>;
 
     unstakingRequestCounts(
-      owner: string,
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
+
+    unstakingRequests(
+      arg0: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber, boolean] & {
+        id: BigNumber;
+        amount: BigNumber;
+        requestTs: BigNumber;
+        isClaimed: boolean;
+      }
+    >;
 
     withdraw(
       requestId: BigNumberish,
@@ -725,13 +737,8 @@ export interface StakedStone extends BaseContract {
 
   MANAGER_ROLE(overrides?: CallOverrides): Promise<string>;
 
-  _accumulativeUserReward(
-    arg0: string,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
   accumulativeUserReward(
-    owner: string,
+    arg0: string,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
@@ -818,6 +825,16 @@ export interface StakedStone extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  readyDividend(
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber, BigNumber] & {
+      startDate: BigNumber;
+      recordDate: BigNumber;
+      totalShare: BigNumber;
+    }
+  >;
+
   renounceRole(
     role: BytesLike,
     account: string,
@@ -825,7 +842,7 @@ export interface StakedStone extends BaseContract {
   ): Promise<ContractTransaction>;
 
   requestOwnerOf(
-    requestId: BigNumberish,
+    arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<string>;
 
@@ -874,11 +891,6 @@ export interface StakedStone extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  unstakingRequest(
-    requestId: BigNumberish,
-    overrides?: CallOverrides
-  ): Promise<UnstakingRequestStructOutput>;
-
   unstakingRequestByIndex(
     owner: string,
     index: BigNumberish,
@@ -886,9 +898,21 @@ export interface StakedStone extends BaseContract {
   ): Promise<UnstakingRequestStructOutput>;
 
   unstakingRequestCounts(
-    owner: string,
+    arg0: string,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
+
+  unstakingRequests(
+    arg0: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<
+    [BigNumber, BigNumber, BigNumber, boolean] & {
+      id: BigNumber;
+      amount: BigNumber;
+      requestTs: BigNumber;
+      isClaimed: boolean;
+    }
+  >;
 
   withdraw(
     requestId: BigNumberish,
@@ -900,13 +924,8 @@ export interface StakedStone extends BaseContract {
 
     MANAGER_ROLE(overrides?: CallOverrides): Promise<string>;
 
-    _accumulativeUserReward(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     accumulativeUserReward(
-      owner: string,
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -987,6 +1006,16 @@ export interface StakedStone extends BaseContract {
 
     reStake(overrides?: CallOverrides): Promise<void>;
 
+    readyDividend(
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber] & {
+        startDate: BigNumber;
+        recordDate: BigNumber;
+        totalShare: BigNumber;
+      }
+    >;
+
     renounceRole(
       role: BytesLike,
       account: string,
@@ -994,7 +1023,7 @@ export interface StakedStone extends BaseContract {
     ): Promise<void>;
 
     requestOwnerOf(
-      requestId: BigNumberish,
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<string>;
 
@@ -1033,11 +1062,6 @@ export interface StakedStone extends BaseContract {
 
     unstake(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
-    unstakingRequest(
-      requestId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<UnstakingRequestStructOutput>;
-
     unstakingRequestByIndex(
       owner: string,
       index: BigNumberish,
@@ -1045,9 +1069,21 @@ export interface StakedStone extends BaseContract {
     ): Promise<UnstakingRequestStructOutput>;
 
     unstakingRequestCounts(
-      owner: string,
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    unstakingRequests(
+      arg0: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<
+      [BigNumber, BigNumber, BigNumber, boolean] & {
+        id: BigNumber;
+        amount: BigNumber;
+        requestTs: BigNumber;
+        isClaimed: boolean;
+      }
+    >;
 
     withdraw(
       requestId: BigNumberish,
@@ -1208,13 +1244,8 @@ export interface StakedStone extends BaseContract {
 
     MANAGER_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
 
-    _accumulativeUserReward(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     accumulativeUserReward(
-      owner: string,
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1301,6 +1332,8 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    readyDividend(overrides?: CallOverrides): Promise<BigNumber>;
+
     renounceRole(
       role: BytesLike,
       account: string,
@@ -1308,7 +1341,7 @@ export interface StakedStone extends BaseContract {
     ): Promise<BigNumber>;
 
     requestOwnerOf(
-      requestId: BigNumberish,
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1357,11 +1390,6 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    unstakingRequest(
-      requestId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     unstakingRequestByIndex(
       owner: string,
       index: BigNumberish,
@@ -1369,7 +1397,12 @@ export interface StakedStone extends BaseContract {
     ): Promise<BigNumber>;
 
     unstakingRequestCounts(
-      owner: string,
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    unstakingRequests(
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -1386,13 +1419,8 @@ export interface StakedStone extends BaseContract {
 
     MANAGER_ROLE(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    _accumulativeUserReward(
-      arg0: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     accumulativeUserReward(
-      owner: string,
+      arg0: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -1482,6 +1510,8 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    readyDividend(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     renounceRole(
       role: BytesLike,
       account: string,
@@ -1489,7 +1519,7 @@ export interface StakedStone extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     requestOwnerOf(
-      requestId: BigNumberish,
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -1540,11 +1570,6 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    unstakingRequest(
-      requestId: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     unstakingRequestByIndex(
       owner: string,
       index: BigNumberish,
@@ -1552,7 +1577,12 @@ export interface StakedStone extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     unstakingRequestCounts(
-      owner: string,
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    unstakingRequests(
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
