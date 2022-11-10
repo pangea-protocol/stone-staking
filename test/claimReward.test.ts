@@ -5,6 +5,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { defaultAbiCoder } from "ethers/lib/utils";
 import { BigNumber } from "ethers";
 import {
+  DUST,
   jumpDays,
   jumpToStartOfWeek,
   multipleTxOnSameBlock,
@@ -130,7 +131,7 @@ describe("CLAIM REWARD UNIT TEST", async () => {
       const curr = await stone.balanceOf(user0.address);
 
       // user0은 모든 depositedReward를 가져갈 수 있습니다.
-      expect(result).to.be.closeTo(ethers.utils.parseEther("200"), 1000);
+      expect(result).to.be.closeTo(ethers.utils.parseEther("200"), DUST);
       expect(curr.sub(prev)).to.be.eq(result);
     });
 
@@ -189,8 +190,8 @@ describe("CLAIM REWARD UNIT TEST", async () => {
 
       const totalReward = ethers.utils.parseEther("200");
 
-      expect(result0).to.be.closeTo(totalReward.mul(12).div(14), 1000);
-      expect(result1).to.be.closeTo(totalReward.mul(2).div(14), 1000);
+      expect(result0).to.be.closeTo(totalReward.mul(12).div(14), DUST);
+      expect(result1).to.be.closeTo(totalReward.mul(2).div(14), DUST);
       expect(result0.add(result1)).to.be.lte(totalReward);
 
       expect(
@@ -220,8 +221,8 @@ describe("CLAIM REWARD UNIT TEST", async () => {
 
       const totalReward = ethers.utils.parseEther("200");
 
-      expect(result0).to.be.closeTo(totalReward.mul(17).div(28), 1000);
-      expect(result1).to.be.closeTo(totalReward.mul(11).div(28), 1000);
+      expect(result0).to.be.closeTo(totalReward.mul(17).div(28), DUST);
+      expect(result1).to.be.closeTo(totalReward.mul(11).div(28), DUST);
       expect(result0.add(result1)).to.be.lte(totalReward);
 
       expect(
@@ -251,8 +252,8 @@ describe("CLAIM REWARD UNIT TEST", async () => {
 
       const totalReward = ethers.utils.parseEther("200");
 
-      expect(result0).to.be.closeTo(totalReward.mul(13).div(28), 1000);
-      expect(result1).to.be.closeTo(totalReward.mul(15).div(28), 1000);
+      expect(result0).to.be.closeTo(totalReward.mul(13).div(28), DUST);
+      expect(result1).to.be.closeTo(totalReward.mul(15).div(28), DUST);
       expect(result0.add(result1)).to.be.lte(totalReward);
 
       expect(
@@ -283,8 +284,8 @@ describe("CLAIM REWARD UNIT TEST", async () => {
 
       const totalReward = ethers.utils.parseEther("200");
 
-      expect(result0).to.be.closeTo(totalReward.mul(9).div(28), 1000);
-      expect(result1).to.be.closeTo(totalReward.mul(19).div(28), 1000);
+      expect(result0).to.be.closeTo(totalReward.mul(9).div(28), DUST);
+      expect(result1).to.be.closeTo(totalReward.mul(19).div(28), DUST);
       expect(result0.add(result1)).to.be.lte(totalReward);
 
       expect(
@@ -307,7 +308,7 @@ describe("CLAIM REWARD UNIT TEST", async () => {
 
       const totalReward = ethers.utils.parseEther("200");
 
-      expect(result).to.be.closeTo(totalReward, 1000);
+      expect(result).to.be.closeTo(totalReward, DUST);
       expect(
         await stakedStone.connect(user0).callStatic.claimReward()
       ).to.be.eq(result);
@@ -326,7 +327,7 @@ describe("CLAIM REWARD UNIT TEST", async () => {
       ).to.be.eq(result);
       const totalReward = ethers.utils.parseEther("100");
 
-      expect(result).to.be.closeTo(totalReward.mul(3).div(7), 1000);
+      expect(result).to.be.closeTo(totalReward.mul(3).div(7), DUST);
     });
 
     it("유저 0이 3일 예치 후 빼고, 7일차부터 다시 예치한 경우", async () => {
@@ -346,7 +347,7 @@ describe("CLAIM REWARD UNIT TEST", async () => {
       ).to.be.eq(result);
       const totalReward = ethers.utils.parseEther("200");
 
-      expect(result).to.be.closeTo(totalReward, 1000);
+      expect(result).to.be.closeTo(totalReward, DUST);
     });
 
     it("유저 0 : 유저 1 : 유저 2가 동일 시점에 자산을 넣은 경우", async () => {
@@ -378,9 +379,9 @@ describe("CLAIM REWARD UNIT TEST", async () => {
 
       const totalReward = ethers.utils.parseEther("200");
 
-      expect(result0).to.be.closeTo(totalReward.mul(1).div(6), 1000);
-      expect(result1).to.be.closeTo(totalReward.mul(2).div(6), 1000);
-      expect(result2).to.be.closeTo(totalReward.mul(3).div(6), 1000);
+      expect(result0).to.be.closeTo(totalReward.mul(1).div(6), DUST);
+      expect(result1).to.be.closeTo(totalReward.mul(2).div(6), DUST);
+      expect(result2).to.be.closeTo(totalReward.mul(3).div(6), DUST);
     });
   });
 });

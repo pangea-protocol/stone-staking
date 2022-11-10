@@ -80,7 +80,7 @@ export interface StakedStoneInterface extends utils.Interface {
     "initialize(address,uint256)": FunctionFragment;
     "multicall(bytes[])": FunctionFragment;
     "reStake()": FunctionFragment;
-    "readyDividend()": FunctionFragment;
+    "readyDividendInfo()": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
     "requestOwnerOf(uint256)": FunctionFragment;
     "resetDividendRecordDate()": FunctionFragment;
@@ -175,7 +175,7 @@ export interface StakedStoneInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "reStake", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "readyDividend",
+    functionFragment: "readyDividendInfo",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -304,7 +304,7 @@ export interface StakedStoneInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "multicall", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "reStake", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "readyDividend",
+    functionFragment: "readyDividendInfo",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -638,15 +638,9 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    readyDividend(
+    readyDividendInfo(
       overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber, BigNumber] & {
-        startDate: BigNumber;
-        recordDate: BigNumber;
-        totalShare: BigNumber;
-      }
-    >;
+    ): Promise<[DividendStructOutput]>;
 
     renounceRole(
       role: BytesLike,
@@ -825,15 +819,7 @@ export interface StakedStone extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  readyDividend(
-    overrides?: CallOverrides
-  ): Promise<
-    [BigNumber, BigNumber, BigNumber] & {
-      startDate: BigNumber;
-      recordDate: BigNumber;
-      totalShare: BigNumber;
-    }
-  >;
+  readyDividendInfo(overrides?: CallOverrides): Promise<DividendStructOutput>;
 
   renounceRole(
     role: BytesLike,
@@ -1006,15 +992,7 @@ export interface StakedStone extends BaseContract {
 
     reStake(overrides?: CallOverrides): Promise<void>;
 
-    readyDividend(
-      overrides?: CallOverrides
-    ): Promise<
-      [BigNumber, BigNumber, BigNumber] & {
-        startDate: BigNumber;
-        recordDate: BigNumber;
-        totalShare: BigNumber;
-      }
-    >;
+    readyDividendInfo(overrides?: CallOverrides): Promise<DividendStructOutput>;
 
     renounceRole(
       role: BytesLike,
@@ -1332,7 +1310,7 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    readyDividend(overrides?: CallOverrides): Promise<BigNumber>;
+    readyDividendInfo(overrides?: CallOverrides): Promise<BigNumber>;
 
     renounceRole(
       role: BytesLike,
@@ -1510,7 +1488,7 @@ export interface StakedStone extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    readyDividend(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    readyDividendInfo(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     renounceRole(
       role: BytesLike,

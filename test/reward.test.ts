@@ -4,6 +4,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { defaultAbiCoder } from "ethers/lib/utils";
 import {
+  DUST,
   getWeekStartTime,
   jumpDays,
   jumpToNextBlockTimestamp,
@@ -239,7 +240,7 @@ describe("REWARD UNIT TEST", async () => {
 
       expect(await stakedStone.claimableReward(user0.address)).to.be.closeTo(
         amount.mul(3).div(7),
-        1000
+        DUST
       );
     });
 
@@ -257,11 +258,11 @@ describe("REWARD UNIT TEST", async () => {
 
       expect(await stakedStone.claimableReward(user0.address)).to.be.closeTo(
         amount.mul(6).div(35),
-        1000
+        DUST
       );
       expect(await stakedStone.claimableReward(user1.address)).to.be.closeTo(
         amount.mul(9).div(35),
-        1000
+        DUST
       );
     });
 

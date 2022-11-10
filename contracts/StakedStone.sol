@@ -127,7 +127,7 @@ contract StakedStone is
     uint256 private openDate;
 
     // @dev 배당 예정 정보 (미배당 상태)
-    Dividend public readyDividend;
+    Dividend private readyDividend;
 
     // @dev 과거 배당 정보 (배당된 상태)
     Dividend[] private _dividendHistory;
@@ -210,9 +210,11 @@ contract StakedStone is
      * @notice 배당 기준시각 셋팅하기
      */
     function setDividendRecordDate() external onlyRole(MANAGER_ROLE) {
-        require(readyDividend.recordDate == 0, "ALREADY SET");
         require(block.timestamp >= openDate, "NOT START");
         _updateGrowthGlobal();
+
+        require(readyDividend.recordDate == 0, "ALREADY SET");
+        require(totalShare > 0, "TOTAL SHARE NOT ZERO");
 
         readyDividend.startDate = _dividendHistory.length > 0 ? _dividendHistory[_dividendHistory.length-1].recordDate : openDate;
         readyDividend.recordDate = block.timestamp;
@@ -252,9 +254,22 @@ contract StakedStone is
         uint256 amount
     ) external onlyRole(MANAGER_ROLE) {
         require(readyDividend.recordDate != 0, "NOT SET");
+        require(amount > 0, "NOT ZERO");
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
+        // @dev 배당 토큰 수는 1~2개로 이루어짐. 순회 구문으로도 gas efficient함
+        for (uint256 i = 0; i < readyDividend.tokens.length; i++) {
+            address _token = readyDividend.tokens[i];
+            if (_token != token) continue;
+
+            // @dev 이미 납입된 토큰이라면, 추가하지 않고, readyDividend에 추가한다
+            readyDividend.amounts[i] += amount;
+            emit DepositDividend(_dividendHistory.length, token, amount);
+            return;
+        }
+
+        // @dev 이미 납입되지 않은 토큰은 추가한다
         readyDividend.tokens.push(token);
         readyDividend.amounts.push(amount);
 
@@ -326,6 +341,13 @@ contract StakedStone is
      */
     function totalDividendEpoch() external view returns (uint256) {
         return _dividendHistory.length;
+    }
+
+    /**
+     * @notice 배당 예정 정보
+     */
+    function readyDividendInfo() external view returns (Dividend memory) {
+        return readyDividend;
     }
 
     /**
@@ -447,10 +469,10 @@ contract StakedStone is
      */
     function claimDividend(uint256 epoch) external updateUserSnapshot(msg.sender) {
         require(epoch < _dividendHistory.length, "NOT EXIST DIVIDEND");
-        require(!_userDividendSnapshot[msg.sender][epoch].isPaid, "ALREADY PAID");
 
-        uint256 userShare = _userDividendSnapshot[msg.sender][epoch].share;
-        require(userShare > 0, "NO SHARE");
+        DividendSnapshot memory snapshot = _userDividendSnapshot[msg.sender][epoch];
+        require(!snapshot.isPaid, "ALREADY PAID");
+        require(snapshot.share > 0, "NO SHARE");
 
         Dividend memory epochDividend = _dividendHistory[epoch];
         uint256 epochTotalShare = epochDividend.totalShare;
@@ -460,7 +482,7 @@ contract StakedStone is
             uint256 amount = epochDividend.amounts[i];
 
             uint256 userAmount = FullMath.mulDiv(
-                amount, userShare, epochTotalShare
+                amount, snapshot.share, epochTotalShare
             );
 
             IERC20(token).safeTransfer(msg.sender, userAmount);

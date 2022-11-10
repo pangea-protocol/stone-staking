@@ -1,6 +1,7 @@
 import { ContractTransaction } from "ethers";
 import { ethers, network } from "hardhat";
 
+export const DUST = ethers.utils.parseEther("0.0001");
 export const DAY = 86400;
 export const WEEK = DAY * 7;
 /**

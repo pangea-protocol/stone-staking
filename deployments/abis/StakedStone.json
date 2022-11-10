@@ -733,22 +733,39 @@
   },
   {
     "inputs": [],
-    "name": "readyDividend",
+    "name": "readyDividendInfo",
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "startDate",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "recordDate",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalShare",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "startDate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "recordDate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalShare",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "tokens",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "amounts",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct IStakedStoneStruct.Dividend",
+        "name": "",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",
