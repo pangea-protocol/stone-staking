@@ -1,12 +1,12 @@
 # Pangeaswap Stone Staking
 
-**Objective** 
+### Objective
 
-판게아스왑의 프로토콜 수익들을 STONE 홀더들에게 분배
+판게아스왑의 프로토콜 수익들을 STONE 홀더들에게 분배하는 시스템
 
-### StakedStone 컨트랙트
+## StakedStone 컨트랙트
 
-#### 1. 예치 프로세스
+### 1. 예치 프로세스
 
 StakedStone에 예치함으로써, STONE 홀더는 Pangeaswap에서 발생하는 수익들을 공유받는다. 유저가 예치한 자산을 빼려면 unstake을 호출 후, cooldown 기간이후에 withdraw할 수 있다. unstake 호출 후에는 유저는 claim할 수 없다.
 
@@ -19,21 +19,52 @@ StakedStone에 예치함으로써, STONE 홀더는 Pangeaswap에서 발생하는
 
 **Holder Side**
 
-- `function stake(uint256 amount) external` : amount만큼의 STONE을 예치
+#### 스톤 스테이킹 수행하기
+amount만큼의 STONE을 예치
+````solidity
+function stake(uint256 amount) external;
+````` 
 
-- `function unstake(uint256 amount) external` : 예치된 STONE에서 amount 만큼 인출
+#### 스톤 unstake 요청하기
+예치된 STONE에서 amount 만큼 인출 요청, cooldown 시간이 경과된 이후 인출할 수 있음.
 
-- `function balanceOf(address owner) external view returns (uint256 amount)` : 스테이킹한 자산 조회
+````solidity
+function unstake(uint256 amount) external;
+```` 
 
-- `function unstakingRequestCounts(address owner) external view returns (uint256)` : 현재 owner가 요청한 unstaking request 갯수 ( withdraw하면 줄어듦)
+#### 스톤 인출하기
+cooldown 기간이 지난 unstaking request 호출해서 가져오기
 
-- `function unstakingRequestByIndex(address owner, uint256 index) external view returns (UnstakingRequest memory)` : 요청한 unstaking 정보 조회
+````solidity
+function withdraw(uint256 requestId) external;
+```` 
 
-- `function withdraw(uint256 requestId) external` : cooldown 기간이 지난 unstaking request 호출해서 가져오기
+#### 예치된 자산 조회하기
+스테이킹한 자산 조회
+
+````solidity
+function balanceOf(address owner) external view returns (uint256 amount);
+````
+
+#### unstake 요청 조회하기
+
+````solidity
+// unstake 요청 갯수
+function unstakingRequestCounts(address owner) external view returns (uint256);
+
+// 요청한 unstaking 정보 조회
+function unstakingRequestByIndex(
+    address owner, 
+    uint256 index
+) external view returns (UnstakingRequest memory);
+````
 
 **Manager Side**
+unstake에서 withdraw까지의 기간을 지정. default : 7 days 소요
 
-- `function setCooldownPeriod(uint256 period) external` : unstake에서 withdraw까지의 기간을 지정. default : 7 days 소요
+````solidity
+function setCooldownPeriod(uint256 period) external;
+````
 
 #### 2. 배당 프로세스
 
@@ -49,19 +80,53 @@ StakedStone에 예치함으로써, STONE 홀더는 Pangeaswap에서 발생하는
 
 **Holder Side**
 
-* `function allocatedDividend(address owner, uint256 epoch) external view returns (bool isPaid, address[] memory tokens, uint256[] memory amounts)` : 해당 epoch에서 owner에게 할당된 배당금 토큰 조회
+#### 배당금 조회하기
+해당 epoch에서 owner에게 할당된 배당금 토큰 조회
 
-* `function claimDividend(uint256 epoch) external` :  해당 epoch에 배치된 배당금을 수령
+````solidity
+function allocatedDividend(address owner, uint256 epoch) external view returns (bool isPaid, address[] memory tokens, uint256[] memory amounts)
+````
+
+#### 배당금 받기
+해당 epoch에 배치된 배당금을 수령
+
+````solidity
+function claimDividend(uint256 epoch) external;
+````
 
 **Manager Side**
 
-* `function setDividendRecordDate() external` : 배당금 지분율을 산정할 기준 시각과 전체 지분양을 결정. (호출 시각 기준으로 정산)
 
-* `function depositDividend(address token, uint256 amount) external` : 해당 배당시각에 토큰과 amount를 예치. ( setDividendRecordDate 이후 호출 가능)
+#### 배당 시작일 지정
 
-* `function resetDividendRecordDate() external` : 집행 전까지 언제든 resetDividendRecordDate을 호출할 수 있으며, 납입된 배당금은 회수처리.
+배당금 지분율을 산정할 기준 시각과 전체 지분양을 결정. (호출 시각 기준으로 배당 지분 계산)
+````solidity
+function setDividendRecordDate() external;
+````
 
-* `function executeDividend() external` : 배당금 분배 시작 ( 납입된 배당금 전액을 해당 배당에 사용)
+#### 배당금 납입하기
+해당 배당시각에 토큰과 amount를 예치. ( setDividendRecordDate 이후 호출 가능)
+
+````solidity
+function depositDividend(address token, uint256 amount) external;
+````
+
+#### 배당 취소하기
+
+집행 전까지 언제든 resetDividendRecordDate을 호출할 수 있으며, 납입된 배당금은 회수처리.
+
+````solidity
+function resetDividendRecordDate() external;
+````
+
+#### 배당 집행하기
+
+배당금 분배 시작 ( 납입된 배당금 전액을 해당 배당에 사용)
+
+````solidity
+function executeDividend() external;
+````
+
 
 
 #### 리워드 프로세스
