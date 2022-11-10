@@ -510,8 +510,6 @@ contract StakedStone is
         uint256 _checkpoint = checkpoint;
         uint256 amount = _calculateRewardToDistribute();
 
-        // @dev Rewards accumulated while there is no staked supply
-        // are distributed later
         amount = _updatePendingReward(amount);
         growthGlobal = _rewardGrowthGlobal(amount);
         rewardGrowthGlobalLast = growthGlobal;
@@ -544,14 +542,19 @@ contract StakedStone is
     }
 
     function _updatePendingReward(uint256 amount) internal returns (uint256) {
-        if (_totalSupply > 0) {
-            if (pendingReward > 0) {
-                amount += pendingReward;
-                pendingReward = 0;
-            }
-        } else {
+        if (_totalSupply == 0) {
+            // @dev Rewards accumulated while there is no staked supply
+            // are distributed later
             pendingReward += amount;
+            return 0;
         }
+
+        if (pendingReward > 0) {
+            // @dev add pendingReward if it remains
+            amount += pendingReward;
+            pendingReward = 0;
+        }
+
         return amount;
     }
 
@@ -601,7 +604,7 @@ contract StakedStone is
     function _rewardGrowthGlobal(uint256 amount) private view returns (uint256 growthGlobal) {
         growthGlobal = rewardGrowthGlobalLast;
 
-        if (_totalSupply > 0) {
+        if (amount > 0 && _totalSupply > 0) {
             growthGlobal += FullMath.mulDiv(amount, FixedPoint.Q96, _totalSupply);
         }
     }

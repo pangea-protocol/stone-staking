@@ -3,9 +3,23 @@ import { StakedStone, Token } from "../types";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { defaultAbiCoder } from "ethers/lib/utils";
-import { BigNumber } from "ethers";
+import { BigNumber, ContractFunction, ContractTransaction } from "ethers";
 
-describe.only("CLAIM REWARD UNIT TEST", async () => {
+/**
+ * 리워드에 대한 세부 분배 규칙 시뮬레이션
+ *
+ * 주요 엣지 케이스
+ *
+ * [1] 지난 epoch의 남은 물량을 정상적으로 처리하는지
+ *
+ * [2] staked된 물량이 없었을 때 비율이 올바르게 처리되는지
+ *
+ * [3] 시간과 예치한 물량에 비례해서 분배가 올바르게 되고 있는지
+ *
+ * [4] stake & unstake에 따라 정상적으로 분배비율이 바뀌고 있는지
+ *
+ */
+describe("CLAIM REWARD UNIT TEST", async () => {
   let _snapshotId: string;
   const WEEK = 604800;
 
@@ -62,9 +76,24 @@ describe.only("CLAIM REWARD UNIT TEST", async () => {
     _snapshotId = await ethers.provider.send("evm_snapshot", []);
   });
 
-  async function setNextBlockTimestamp(time: number) {
+  async function jumpToNextBlockTimestamp(time: number) {
     await network.provider.send("evm_setNextBlockTimestamp", [time]);
     await network.provider.send("evm_mine", []);
+  }
+
+  /**
+   * 동일 블럭 내에 트랜잭션 호출 ( hardhat 환경 내에서 복수개의 transaction을 밀어 넣기 )
+   * @param txs
+   */
+  async function multipleTxOnSameBlock(
+    ...txs: (() => Promise<ContractTransaction>)[]
+  ) {
+    await network.provider.send("evm_setAutomine", [false]);
+    for (const tx of txs) {
+      await tx();
+    }
+    await network.provider.send("evm_mine", []);
+    await network.provider.send("evm_setAutomine", [true]);
   }
 
   async function jumpToStartOfWeek(mine = true) {
@@ -137,8 +166,7 @@ describe.only("CLAIM REWARD UNIT TEST", async () => {
     });
 
     it("유저 0이 14일 간 예치, 유저 1이 7일간 예치한 경우", async () => {
-      // 같은 금액을 예치한 경우
-      // 유저0는 7일 * 1주차 보상 + 7일 * 2주차 보상 / 2
+      // 유저0는 7일 * 1주차 보상     + 7일 * 2주차 보상 / 2
       // 유저1는 7일 * 2주차 보상 / 2
       // 으로 나뉘어짐
 
@@ -176,9 +204,8 @@ describe.only("CLAIM REWARD UNIT TEST", async () => {
     });
 
     it("유저 0이 14일 간 예치, 유저 1이 4일간 예치한 경우", async () => {
-      // 같은 금액을 예치한 경우
       // 유저0 지분 = 10일 + 4일 / 2 = 12
-      // 유저1 지분 = 4일 / 2 = 2
+      // 유저1 지분 =        4일 / 2 = 2
 
       const amount = ethers.utils.parseEther("10");
 
@@ -206,7 +233,6 @@ describe.only("CLAIM REWARD UNIT TEST", async () => {
     });
 
     it("유저 0과 유저 1이 동일 예치 후, 유저 0이 이후에 추가 예치한 케이스", async () => {
-      // 같은 금액을 예치한 경우
       // 유저0 지분 = 1일 + 7일 / 2 + 6일 * 2 / 3 = 1 + 3.5 + 4 = 8.5 (17/28)
       // 유저1 지분 =       7일 / 2 + 6일 * 1 / 3 =     3.5 + 2 = 5.5 (11/28)
 
@@ -238,7 +264,6 @@ describe.only("CLAIM REWARD UNIT TEST", async () => {
     });
 
     it("유저 0과 유저 1이 동일 예치 후, 유저 0이 이후에 절반을 제거한 케이스", async () => {
-      // 같은 금액을 예치한 경우
       // 유저0 지분 = 1일 + 7일 / 2 + 6일 * 1 / 3 = 1 + 3.5 + 2 = 6.5 (13/28)
       // 유저1 지분 =       7일 / 2 + 6일 * 2 / 3 =     3.5 + 4 = 7.5 (15/28)
 
@@ -271,7 +296,7 @@ describe.only("CLAIM REWARD UNIT TEST", async () => {
 
     it("유저 0과 유저 1이 동일 예치 후, 유저 0이 모두 제거한 케이스", async () => {
       // 같은 금액을 예치한 경우
-      // 유저0 지분 = 1일 + 7일 / 2       = 1 + 3.5 = 4.5 (9/28)
+      // 유저0 지분 = 1일 + 7일 / 2       = 1 + 3.5 = 4.5 ( 9/28)
       // 유저1 지분 =       7일 / 2 + 6일 = 3.5 + 6 = 9.5 (19/28)
 
       const amount = ethers.utils.parseEther("10");
@@ -333,6 +358,60 @@ describe.only("CLAIM REWARD UNIT TEST", async () => {
       const totalReward = ethers.utils.parseEther("100");
 
       expect(result).to.be.closeTo(totalReward.mul(3).div(7), 1000);
+    });
+
+    it("유저 0이 3일 예치 후 빼고, 7일차부터 다시 예치한 경우", async () => {
+      const amount = ethers.utils.parseEther("10");
+
+      await jumpToStartOfWeek(false);
+      await stakedStone.connect(user0).stake(amount);
+      await jumpDays(3, true);
+      await stakedStone.connect(user0).unstake(amount);
+      await jumpDays(7, true);
+      await stakedStone.connect(user0).stake(amount);
+      await jumpDays(4, true);
+
+      const result = await stakedStone.claimableReward(user0.address);
+      expect(
+        await stakedStone.connect(user0).callStatic.claimReward()
+      ).to.be.eq(result);
+      const totalReward = ethers.utils.parseEther("200");
+
+      expect(result).to.be.closeTo(totalReward, 1000);
+    });
+
+    it("유저 0 : 유저 1 : 유저 2가 동일 시점에 자산을 넣은 경우", async () => {
+      const amount = ethers.utils.parseEther("10");
+
+      await jumpToStartOfWeek(false);
+
+      // 동일 트랜잭션 내에서 호출
+      await multipleTxOnSameBlock(
+        () => stakedStone.connect(user0).stake(amount.mul(1)),
+        () => stakedStone.connect(user1).stake(amount.mul(2)),
+        () => stakedStone.connect(user2).stake(amount.mul(3))
+      );
+
+      await jumpDays(14, true);
+
+      const result0 = await stakedStone.claimableReward(user0.address);
+      const result1 = await stakedStone.claimableReward(user1.address);
+      const result2 = await stakedStone.claimableReward(user2.address);
+      expect(
+        await stakedStone.connect(user0).callStatic.claimReward()
+      ).to.be.eq(result0);
+      expect(
+        await stakedStone.connect(user1).callStatic.claimReward()
+      ).to.be.eq(result1);
+      expect(
+        await stakedStone.connect(user2).callStatic.claimReward()
+      ).to.be.eq(result2);
+
+      const totalReward = ethers.utils.parseEther("200");
+
+      expect(result0).to.be.closeTo(totalReward.mul(1).div(6), 1000);
+      expect(result1).to.be.closeTo(totalReward.mul(2).div(6), 1000);
+      expect(result2).to.be.closeTo(totalReward.mul(3).div(6), 1000);
     });
   });
 });
