@@ -105,6 +105,7 @@ contract StakedStone is
 
     bytes32 public constant MANAGER_ROLE = keccak256(abi.encode("MANAGER"));
 
+    // @dev 주차 별 배치된 리워드 총액, (timestamp % 7 days) == 0의 값으로 입력해야 함.
     mapping(uint256 => uint256) public totalRewardPerWeek;
 
     uint256 private checkpoint;
@@ -117,26 +118,39 @@ contract StakedStone is
     mapping(address => uint256) private _balanceOf;
     uint256 private _totalSupply;
 
+    // @dev unstake 후 withdraw 가능할 때까지 기간 (초)
     uint256 public cooldownPeriod;
 
     address public stone;
 
-    UnstakingRequest[] private _unstakingRequests;
+    // @dev Staked Stone 시작 시간
+    uint256 private openDate;
+
+    // @dev 배당 예정 정보 (미배당 상태)
+    Dividend private readyDividend;
+
+    // @dev 과거 배당 정보 (배당된 상태)
     Dividend[] private _dividendHistory;
 
     mapping(address => uint256) private _userLastRecordDate;
     mapping(address => mapping(uint256 => DividendSnapshot)) private _userDividendSnapshot;
-    mapping(address => uint256) public _accumulativeUserReward;
 
-    mapping(uint256 => address) private _requestOwnerOf;
-    mapping(address => uint256) private _requestCounts;
+    UnstakingRequest[] public unstakingRequests;
+    mapping(uint256 => address) public requestOwnerOf;
+    /**
+     * @notice Get the number of un-staking requests by owner
+     */
+    mapping(address => uint256) public unstakingRequestCounts;
     mapping(address => mapping(uint256 => uint256)) private _ownedRequests;
     mapping(uint256 => uint256) private _ownedRequestsIndex;
 
+    // @dev 유저의 리워드 스냅샷 정보, 이를 통해 받을 수 있는 리워드를 역산
     mapping(address => RewardSnapshot) private _userRewardSnapshot;
 
-    uint256 private openDate;
-    Dividend private currentDividend;
+    /**
+     * @notice 유저별 수령한 누적 리워드(STONE)
+     */
+    mapping(address => uint256) public accumulativeUserReward;
 
     receive() external payable {
     }
@@ -196,19 +210,21 @@ contract StakedStone is
      * @notice 배당 기준시각 셋팅하기
      */
     function setDividendRecordDate() external onlyRole(MANAGER_ROLE) {
-        require(currentDividend.recordDate == 0, "ALREADY SET");
-        require(block.timestamp >= checkpoint, "NOT START");
+        require(block.timestamp >= openDate, "NOT START");
         _updateGrowthGlobal();
 
-        currentDividend.startDate = _dividendHistory.length > 0 ? _dividendHistory[_dividendHistory.length-1].recordDate : openDate;
-        currentDividend.recordDate = block.timestamp;
-        currentDividend.totalShare = totalShare;
+        require(readyDividend.recordDate == 0, "ALREADY SET");
+        require(totalShare > 0, "TOTAL SHARE NOT ZERO");
+
+        readyDividend.startDate = _dividendHistory.length > 0 ? _dividendHistory[_dividendHistory.length-1].recordDate : openDate;
+        readyDividend.recordDate = block.timestamp;
+        readyDividend.totalShare = totalShare;
 
         emit SetDividend(
             _dividendHistory.length,
-            currentDividend.startDate,
-            currentDividend.recordDate,
-            currentDividend.totalShare
+            readyDividend.startDate,
+            readyDividend.recordDate,
+            readyDividend.totalShare
         );
     }
 
@@ -216,16 +232,16 @@ contract StakedStone is
      * @notice 배당 기준시각 파기하기
      */
     function resetDividendRecordDate() external onlyRole(MANAGER_ROLE) {
-        require(currentDividend.recordDate != 0, "NOT SET");
+        require(readyDividend.recordDate != 0, "NOT SET");
 
-        for (uint256 i = 0; i < currentDividend.tokens.length; i++) {
-            address token = currentDividend.tokens[i];
-            uint256 amount = currentDividend.amounts[i];
+        for (uint256 i = 0; i < readyDividend.tokens.length; i++) {
+            address token = readyDividend.tokens[i];
+            uint256 amount = readyDividend.amounts[i];
             // @dev get the deposited dividend back
             IERC20(token).safeTransfer(msg.sender, amount);
         }
 
-        delete currentDividend;
+        delete readyDividend;
 
         emit ResetDividend(_dividendHistory.length);
     }
@@ -237,12 +253,25 @@ contract StakedStone is
         address token,
         uint256 amount
     ) external onlyRole(MANAGER_ROLE) {
-        require(currentDividend.recordDate != 0, "NOT SET");
+        require(readyDividend.recordDate != 0, "NOT SET");
+        require(amount > 0, "NOT ZERO");
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        currentDividend.tokens.push(token);
-        currentDividend.amounts.push(amount);
+        // @dev 배당 토큰 수는 1~2개로 이루어짐. 순회 구문으로도 gas efficient함
+        for (uint256 i = 0; i < readyDividend.tokens.length; i++) {
+            address _token = readyDividend.tokens[i];
+            if (_token != token) continue;
+
+            // @dev 이미 납입된 토큰이라면, 추가하지 않고, readyDividend에 추가한다
+            readyDividend.amounts[i] += amount;
+            emit DepositDividend(_dividendHistory.length, token, amount);
+            return;
+        }
+
+        // @dev 이미 납입되지 않은 토큰은 추가한다
+        readyDividend.tokens.push(token);
+        readyDividend.amounts.push(amount);
 
         emit DepositDividend(_dividendHistory.length, token, amount);
     }
@@ -251,27 +280,27 @@ contract StakedStone is
      * @notice 배당 집행하기
      */
     function executeDividend() external onlyRole(MANAGER_ROLE) {
-        require(currentDividend.recordDate != 0, "NOT SET");
-        require(currentDividend.tokens.length > 0, "NO DEPOSIT");
+        require(readyDividend.recordDate != 0, "NOT SET");
+        require(readyDividend.tokens.length > 0, "NO DEPOSIT");
         _updateGrowthGlobal();
 
         _dividendHistory.push(
             Dividend(
-                currentDividend.startDate,
-                currentDividend.recordDate,
-                currentDividend.totalShare,
-                currentDividend.tokens,
-                currentDividend.amounts
+                readyDividend.startDate,
+                readyDividend.recordDate,
+                readyDividend.totalShare,
+                readyDividend.tokens,
+                readyDividend.amounts
             )
         );
 
-        totalShare -= currentDividend.totalShare;
-        delete currentDividend;
+        totalShare -= readyDividend.totalShare;
+        delete readyDividend;
 
         emit ExecuteDividend(
             _dividendHistory.length - 1,
-            currentDividend.tokens,
-            currentDividend.amounts
+            readyDividend.tokens,
+            readyDividend.amounts
         );
     }
 
@@ -299,34 +328,12 @@ contract StakedStone is
         return _totalSupply;
     }
 
-    function unstakingRequest(uint256 requestId) external view returns (UnstakingRequest memory) {
-        return _unstakingRequests[requestId];
-    }
-
-    function requestOwnerOf(uint256 requestId) external view returns (address) {
-        return _requestOwnerOf[requestId];
-    }
-
-    /**
-     * @notice Get the number of un-staking requests by owner
-     */
-    function unstakingRequestCounts(address owner) external view returns (uint256) {
-        return _requestCounts[owner];
-    }
-
     /**
      * @notice Get the information of un-staking requests by owner
      */
     function unstakingRequestByIndex(address owner, uint256 index) external view returns (UnstakingRequest memory) {
         uint256 requestId = _ownedRequests[owner][index];
-        return _unstakingRequests[requestId];
-    }
-
-    /**
-     * @notice 이때까지 수령한 누적 리워드(STONE)
-     */
-    function accumulativeUserReward(address owner) external view returns (uint256) {
-        return _accumulativeUserReward[owner];
+        return unstakingRequests[requestId];
     }
 
     /**
@@ -334,6 +341,13 @@ contract StakedStone is
      */
     function totalDividendEpoch() external view returns (uint256) {
         return _dividendHistory.length;
+    }
+
+    /**
+     * @notice 배당 예정 정보
+     */
+    function readyDividendInfo() external view returns (Dividend memory) {
+        return readyDividend;
     }
 
     /**
@@ -367,12 +381,12 @@ contract StakedStone is
         _balanceOf[msg.sender] -= amount;
         _totalSupply -= amount;
 
-        uint256 requestId = _unstakingRequests.length;
-        _unstakingRequests.push(UnstakingRequest(requestId, amount, block.timestamp, false));
+        uint256 requestId = unstakingRequests.length;
+        unstakingRequests.push(UnstakingRequest(requestId, amount, block.timestamp, false));
 
-        uint256 count = _requestCounts[msg.sender]++;
+        uint256 count = unstakingRequestCounts[msg.sender]++;
 
-        _requestOwnerOf[requestId] = msg.sender;
+        requestOwnerOf[requestId] = msg.sender;
         _ownedRequests[msg.sender][count] = requestId;
         _ownedRequestsIndex[requestId] = count;
 
@@ -382,30 +396,36 @@ contract StakedStone is
     /**
      * @notice withdraw unstaked Stone after cooldown
      */
-    function withdraw(uint256 requestId) external {
-        UnstakingRequest memory request = _unstakingRequests[requestId];
+    function withdraw(uint256 requestId) external returns (uint256 amount) {
+        UnstakingRequest memory request = unstakingRequests[requestId];
         require(!request.isClaimed, "ALREADY CLAIMED");
-        require(_requestOwnerOf[requestId] == msg.sender, "NOT OWNER");
+        require(requestOwnerOf[requestId] == msg.sender, "NOT OWNER");
         require(request.requestTs + cooldownPeriod <= block.timestamp, "NEED COOLDOWN");
+        amount = request.amount;
 
-        IERC20(stone).safeTransfer(msg.sender, request.amount);
+        IERC20(stone).safeTransfer(msg.sender, amount);
 
-        _unstakingRequests[requestId].isClaimed = true;
+        closeRequest(msg.sender, requestId);
 
-        uint256 lastRequestIndex = --_requestCounts[msg.sender];
+        emit Withdraw(msg.sender, amount);
+    }
+
+    function closeRequest(address owner, uint256 requestId) internal {
+        unstakingRequests[requestId].isClaimed = true;
+
+        // @dev ownedRequests에서 requestId 제거
+        uint256 lastRequestIndex = --unstakingRequestCounts[owner];
         uint256 requestIndex = _ownedRequestsIndex[requestId];
 
         if (requestIndex != lastRequestIndex) {
-            uint256 lastRequestId = _ownedRequests[msg.sender][lastRequestIndex];
+            uint256 lastRequestId = _ownedRequests[owner][lastRequestIndex];
 
-            _ownedRequests[msg.sender][requestIndex] = lastRequestId;
+            _ownedRequests[owner][requestIndex] = lastRequestId;
             _ownedRequestsIndex[lastRequestId] = requestIndex;
         }
 
         delete _ownedRequestsIndex[requestIndex];
-        delete _ownedRequests[msg.sender][lastRequestIndex];
-
-        emit Withdraw(msg.sender, request.amount);
+        delete _ownedRequests[owner][lastRequestIndex];
     }
 
     /**
@@ -419,15 +439,15 @@ contract StakedStone is
     /**
      * @notice claim allocated STONE reward
      */
-    function claimReward() external updateUserSnapshot(msg.sender) {
-        uint256 amount = _claimReward(msg.sender);
+    function claimReward() external updateUserSnapshot(msg.sender) returns (uint256 amount) {
+        amount = _claimReward(msg.sender);
         IERC20(stone).safeTransfer(msg.sender, amount);
     }
 
     function _claimReward(address owner) internal returns (uint256 amount){
         amount = _userRewardSnapshot[owner]._owed;
         _userRewardSnapshot[owner]._owed = 0;
-        _accumulativeUserReward[msg.sender] += amount;
+        accumulativeUserReward[msg.sender] += amount;
 
         emit Claim(msg.sender, amount);
     }
@@ -449,10 +469,10 @@ contract StakedStone is
      */
     function claimDividend(uint256 epoch) external updateUserSnapshot(msg.sender) {
         require(epoch < _dividendHistory.length, "NOT EXIST DIVIDEND");
-        require(!_userDividendSnapshot[msg.sender][epoch].isPaid, "ALREADY PAID");
 
-        uint256 userShare = _userDividendSnapshot[msg.sender][epoch].share;
-        require(userShare > 0, "NO SHARE");
+        DividendSnapshot memory snapshot = _userDividendSnapshot[msg.sender][epoch];
+        require(!snapshot.isPaid, "ALREADY PAID");
+        require(snapshot.share > 0, "NO SHARE");
 
         Dividend memory epochDividend = _dividendHistory[epoch];
         uint256 epochTotalShare = epochDividend.totalShare;
@@ -462,7 +482,7 @@ contract StakedStone is
             uint256 amount = epochDividend.amounts[i];
 
             uint256 userAmount = FullMath.mulDiv(
-                amount, userShare, epochTotalShare
+                amount, snapshot.share, epochTotalShare
             );
 
             IERC20(token).safeTransfer(msg.sender, userAmount);
@@ -474,12 +494,9 @@ contract StakedStone is
     }
 
     /**
-     * @notice 배당금액 계산하기
+     * @notice 주어진 배당 회차에 할당된 배당금액 계산
      */
-    function allocatedDividend(
-        address owner,
-        uint256 epoch
-    ) external view returns (
+    function allocatedDividend(address owner, uint256 epoch) external view returns (
         bool isPaid,
         address[] memory tokens,
         uint256[] memory amounts
@@ -507,22 +524,17 @@ contract StakedStone is
 
     function _updateGrowthGlobal() internal returns (uint256 growthGlobal) {
         uint256 _checkpoint = checkpoint;
-        if (_checkpoint < block.timestamp) {
-            uint256 amount = _calculateRewardToDistribute();
+        uint256 amount = _calculateRewardToDistribute();
 
-            // @dev Rewards accumulated while there is no staked supply
-            // are distributed later
-            amount = _updatePendingReward(amount);
-            growthGlobal = _rewardGrowthGlobal(amount);
+        amount = _updatePendingReward(amount);
+        growthGlobal = _rewardGrowthGlobal(amount);
+        rewardGrowthGlobalLast = growthGlobal;
 
-            totalShare += (block.timestamp - _checkpoint) * _totalSupply;
+        // @dev Skip if the block has been updated in advance. (gas efficient policy)
+        if (_checkpoint >= block.timestamp) continue;
 
-            rewardGrowthGlobalLast = growthGlobal;
-            checkpoint = block.timestamp;
-        } else {
-            // @dev Skip if the block has been updated in advance. (gas efficient policy)
-            growthGlobal = rewardGrowthGlobalLast;
-        }
+        totalShare += (block.timestamp - _checkpoint) * _totalSupply;
+        checkpoint = block.timestamp;
     }
 
     function _calculateUserShare(
@@ -546,14 +558,19 @@ contract StakedStone is
     }
 
     function _updatePendingReward(uint256 amount) internal returns (uint256) {
-        if (_totalSupply > 0) {
-            if (pendingReward > 0) {
-                amount += pendingReward;
-                pendingReward = 0;
-            }
-        } else {
+        if (_totalSupply == 0) {
+            // @dev Rewards accumulated while there is no staked supply
+            // are distributed later
             pendingReward += amount;
+            return 0;
         }
+
+        if (pendingReward > 0) {
+            // @dev add pendingReward if it remains
+            amount += pendingReward;
+            pendingReward = 0;
+        }
+
         return amount;
     }
 
@@ -603,24 +620,28 @@ contract StakedStone is
     function _rewardGrowthGlobal(uint256 amount) private view returns (uint256 growthGlobal) {
         growthGlobal = rewardGrowthGlobalLast;
 
-        if (_totalSupply > 0) {
+        if (amount > 0 && _totalSupply > 0) {
             growthGlobal += FullMath.mulDiv(amount, FixedPoint.Q96, _totalSupply);
         }
     }
 
     function _calculateRewardToDistribute() private view returns (uint256 amount) {
         uint256 _checkpoint = checkpoint;
+        uint256 currentEpoch = (block.timestamp / 7 days) * 7 days;
 
-        uint256 currentWeekStartTime = (block.timestamp / 7 days) * 7 days;
-        if (_checkpoint < currentWeekStartTime) {
-            for (uint256 i = _checkpoint; i < currentWeekStartTime; i += 7 days) {
-                amount += totalRewardPerWeek[i];
+        // @dev 과거 미정산된 Reward 정산
+        if (_checkpoint < currentEpoch) {
+            uint256 _checkpointEpoch = (_checkpoint / 7 days) * 7 days;
+
+            for (uint256 _epoch = _checkpointEpoch; _epoch < currentEpoch; _epoch += 7 days) {
+                uint256 _nextEpoch = _epoch + 7 days;
+                amount += totalRewardPerWeek[_epoch] * (_nextEpoch - _checkpoint) / 7 days;
+                _checkpoint = _nextEpoch;
             }
-            _checkpoint = currentWeekStartTime;
         }
 
         amount += (
-        totalRewardPerWeek[currentWeekStartTime] * (block.timestamp - _checkpoint) / 7 days
+        totalRewardPerWeek[currentEpoch] * (block.timestamp - _checkpoint) / 7 days
         );
     }
 }

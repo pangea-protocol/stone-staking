@@ -490,7 +490,7 @@ export interface IStakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    claimReward(overrides?: CallOverrides): Promise<void>;
+    claimReward(overrides?: CallOverrides): Promise<BigNumber>;
 
     claimableReward(
       owner: string,
@@ -523,7 +523,10 @@ export interface IStakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    withdraw(requestId: BigNumberish, overrides?: CallOverrides): Promise<void>;
+    withdraw(
+      requestId: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
   };
 
   filters: {

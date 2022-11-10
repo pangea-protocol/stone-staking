@@ -3,10 +3,16 @@ import { StakedStone, Token } from "../types";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { defaultAbiCoder } from "ethers/lib/utils";
+import {
+  DUST,
+  getWeekStartTime,
+  jumpDays,
+  jumpToNextBlockTimestamp,
+  WEEK,
+} from "./utils";
 
 describe("REWARD UNIT TEST", async () => {
   let _snapshotId: string;
-  const WEEK = 604800;
 
   let deployer: SignerWithAddress;
   let manager: SignerWithAddress;
@@ -50,11 +56,6 @@ describe("REWARD UNIT TEST", async () => {
     _snapshotId = await ethers.provider.send("evm_snapshot", []);
   });
 
-  async function setNextBlockTimestamp(time: number) {
-    await network.provider.send("evm_setNextBlockTimestamp", [time]);
-    await network.provider.send("evm_mine", []);
-  }
-
   describe("# DEPOSIT & CANCEL REWARD", async () => {
     beforeEach("", async () => {
       await stone.mint(manager.address, ethers.utils.parseEther("10000"));
@@ -65,7 +66,8 @@ describe("REWARD UNIT TEST", async () => {
 
     it("revert: msg.sender is not manager", async () => {
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor((block.timestamp + WEEK) / WEEK) * WEEK;
+
+      const startTime = getWeekStartTime(block.timestamp);
 
       await expect(
         stakedStone.depositReward(ethers.utils.parseEther("100"), startTime)
@@ -79,7 +81,7 @@ describe("REWARD UNIT TEST", async () => {
       );
 
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor((block.timestamp + WEEK) / WEEK) * WEEK;
+      const startTime = getWeekStartTime(block.timestamp);
 
       await expect(
         stakedStone
@@ -95,7 +97,7 @@ describe("REWARD UNIT TEST", async () => {
       );
 
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK;
+      const startTime = getWeekStartTime(block.timestamp);
 
       await expect(
         stakedStone
@@ -111,7 +113,7 @@ describe("REWARD UNIT TEST", async () => {
       );
 
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
 
       await stakedStone
         .connect(manager)
@@ -129,7 +131,7 @@ describe("REWARD UNIT TEST", async () => {
       );
 
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
 
       await stakedStone
         .connect(manager)
@@ -151,7 +153,7 @@ describe("REWARD UNIT TEST", async () => {
       );
 
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
 
       await stakedStone
         .connect(manager)
@@ -175,7 +177,7 @@ describe("REWARD UNIT TEST", async () => {
         .connect(manager)
         .depositReward(ethers.utils.parseEther("100"), startTime);
 
-      await setNextBlockTimestamp(startTime + 1);
+      await jumpToNextBlockTimestamp(startTime + 1);
 
       await expect(
         stakedStone
@@ -191,7 +193,7 @@ describe("REWARD UNIT TEST", async () => {
       );
 
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
 
       await stakedStone
         .connect(manager)
@@ -227,24 +229,24 @@ describe("REWARD UNIT TEST", async () => {
 
     it("claimableReward after stake", async () => {
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
 
       const amount = ethers.utils.parseEther("1200");
 
       await stakedStone.connect(manager).depositReward(amount, startTime);
       await stakedStone.connect(user0).stake(ethers.utils.parseEther("100"));
 
-      await setNextBlockTimestamp(startTime + 3 * 86400);
+      await jumpToNextBlockTimestamp(startTime + 3 * 86400);
 
       expect(await stakedStone.claimableReward(user0.address)).to.be.closeTo(
         amount.mul(3).div(7),
-        1000
+        DUST
       );
     });
 
     it("claimableReward after two accounts stake", async () => {
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
 
       const amount = ethers.utils.parseEther("1200");
 
@@ -252,21 +254,21 @@ describe("REWARD UNIT TEST", async () => {
       await stakedStone.connect(user0).stake(ethers.utils.parseEther("200"));
       await stakedStone.connect(user1).stake(ethers.utils.parseEther("300"));
 
-      await setNextBlockTimestamp(startTime + 3 * 86400);
+      await jumpToNextBlockTimestamp(startTime + 3 * 86400);
 
       expect(await stakedStone.claimableReward(user0.address)).to.be.closeTo(
         amount.mul(6).div(35),
-        1000
+        DUST
       );
       expect(await stakedStone.claimableReward(user1.address)).to.be.closeTo(
         amount.mul(9).div(35),
-        1000
+        DUST
       );
     });
 
     it("claim after two accounts stake", async () => {
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
 
       const amount = ethers.utils.parseEther("1200");
 
@@ -274,7 +276,7 @@ describe("REWARD UNIT TEST", async () => {
       await stakedStone.connect(user0).stake(ethers.utils.parseEther("200"));
       await stakedStone.connect(user1).stake(ethers.utils.parseEther("300"));
 
-      await setNextBlockTimestamp(startTime + 3 * 86400);
+      await jumpToNextBlockTimestamp(startTime + 3 * 86400);
 
       const value = await stakedStone.claimableReward(user0.address);
       const prev = await stone.balanceOf(user0.address);
@@ -286,7 +288,7 @@ describe("REWARD UNIT TEST", async () => {
 
     it("restake", async () => {
       const block = await ethers.provider.getBlock("latest");
-      const startTime = Math.floor(block.timestamp / WEEK) * WEEK + WEEK;
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
 
       const amount = ethers.utils.parseEther("1200");
 
@@ -294,7 +296,7 @@ describe("REWARD UNIT TEST", async () => {
       await stakedStone.connect(user0).stake(ethers.utils.parseEther("200"));
       await stakedStone.connect(user1).stake(ethers.utils.parseEther("300"));
 
-      await setNextBlockTimestamp(startTime + 3 * 86400);
+      await jumpToNextBlockTimestamp(startTime + 3 * 86400);
 
       const value = await stakedStone.claimableReward(user0.address);
       const prev = await stakedStone.balanceOf(user0.address);
@@ -303,5 +305,102 @@ describe("REWARD UNIT TEST", async () => {
 
       expect(curr.sub(prev)).to.be.closeTo(value, ethers.utils.parseEther("1"));
     });
+  });
+
+  describe("# withdraw", async () => {
+    beforeEach("", async () => {
+      await stone.mint(user0.address, ethers.utils.parseEther("1000"));
+      await stone
+        .connect(user0)
+        .approve(stakedStone.address, ethers.constants.MaxUint256);
+      await stone.mint(user1.address, ethers.utils.parseEther("1000"));
+      await stone
+        .connect(user1)
+        .approve(stakedStone.address, ethers.constants.MaxUint256);
+
+      await stone.mint(manager.address, ethers.utils.parseEther("10000"));
+      await stone
+        .connect(manager)
+        .approve(stakedStone.address, ethers.constants.MaxUint256);
+
+      await stakedStone.grantRole(
+        ethers.utils.keccak256(defaultAbiCoder.encode(["string"], ["MANAGER"])),
+        manager.address
+      );
+
+      const block = await ethers.provider.getBlock("latest");
+      const startTime = getWeekStartTime(block.timestamp) + WEEK;
+
+      const amount = ethers.utils.parseEther("1200");
+
+      await stakedStone.connect(manager).depositReward(amount, startTime);
+      await stakedStone.connect(user0).stake(ethers.utils.parseEther("100"));
+      await stakedStone.connect(user1).stake(ethers.utils.parseEther("100"));
+    });
+
+    it("총 4번의 unstake 요청 후, 4번의 withdraw에 정상적으로 동작하는지 확인", async () => {
+      await stakedStone.connect(user0).unstake(ethers.utils.parseEther("10"));
+      await stakedStone.connect(user1).unstake(ethers.utils.parseEther("10"));
+      await stakedStone.connect(user0).unstake(ethers.utils.parseEther("20"));
+      await stakedStone.connect(user1).unstake(ethers.utils.parseEther("20"));
+      await stakedStone.connect(user0).unstake(ethers.utils.parseEther("30"));
+      await stakedStone.connect(user1).unstake(ethers.utils.parseEther("30"));
+      await stakedStone.connect(user0).unstake(ethers.utils.parseEther("40"));
+      await stakedStone.connect(user1).unstake(ethers.utils.parseEther("40"));
+      await jumpDays(7);
+
+      expect(await stakedStone.unstakingRequestCounts(user0.address)).to.be.eq(
+        4
+      );
+      expect(await stakedStone.unstakingRequestCounts(user1.address)).to.be.eq(
+        4
+      );
+
+      const indices = await Promise.all([
+        stakedStone.unstakingRequestByIndex(user0.address, 0),
+        stakedStone.unstakingRequestByIndex(user0.address, 1),
+        stakedStone.unstakingRequestByIndex(user0.address, 2),
+        stakedStone.unstakingRequestByIndex(user0.address, 3),
+      ]);
+
+      _snapshotId = await ethers.provider.send("evm_snapshot", []);
+      for (let group of permute(indices)) {
+        for (let { id: requestId, amount } of group) {
+          const prev = await stone.balanceOf(user0.address);
+          await stakedStone.connect(user0).withdraw(requestId);
+          const curr = await stone.balanceOf(user0.address);
+
+          expect(curr.sub(prev)).to.be.eq(amount);
+        }
+
+        await network.provider.send("evm_revert", [_snapshotId]);
+        _snapshotId = await ethers.provider.send("evm_snapshot", []);
+      }
+    });
+
+    function permute(permutation) {
+      var length = permutation.length,
+        result = [permutation.slice()],
+        c = new Array(length).fill(0),
+        i = 1,
+        k,
+        p;
+
+      while (i < length) {
+        if (c[i] < i) {
+          k = i % 2 && c[i];
+          p = permutation[i];
+          permutation[i] = permutation[k];
+          permutation[k] = p;
+          ++c[i];
+          i = 1;
+          result.push(permutation.slice());
+        } else {
+          c[i] = 0;
+          ++i;
+        }
+      }
+      return result;
+    }
   });
 });

@@ -20,7 +20,7 @@
     "hardhat:deploy": "hardhat node --network hardhat",
     "baobab:deploy": "hardhat deploy --network baobab",
     "cypress:deploy": "hardhat deploy --network cypress",
-    "test": "hardhat test --network hardhat",
+    "test": "hardhat test --network hardhat --grep \"UNIT\"",
     "test:integration": "hardhat --config fork.config.ts test ./test/*.scenario.ts",
     "prettier": "prettier --write 'test/**/*.{js,ts}' && prettier --write contracts/**/*.sol",
     "lint": "yarn prettier && solhint -c .solhint.json contracts/**/*.sol",
