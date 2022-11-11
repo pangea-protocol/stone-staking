@@ -11,6 +11,7 @@ import "./interfaces/IProtocolFeePool.sol";
 import "./interfaces/IMasterDeployer.sol";
 import "./interfaces/IWETH.sol";
 import "./libraries/FullMath.sol";
+import "./interfaces/IProtocolRevenueShare.sol";
 
 
 /**
@@ -51,7 +52,8 @@ import "./libraries/FullMath.sol";
  *
  */
 /// @notice 판게아스왑 프로토콜 수수료 분배를 담당하는 컨트랙트
-contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
+contract ProtocolRevenueShare
+    is IProtocolRevenueShare, AccessControlUpgradeable, Multicall {
     using SafeERC20 for IERC20;
 
     // @notice swapAndShare / collectByPage(uint256 start, uint256 limit)
@@ -92,27 +94,13 @@ contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
     // @notice Growth Fund 할당량 (BIPS가 곱해져 있음)
     mapping(address => uint256) private _allocatedGrowthFunds;
 
+    // @notice Fee Token을 Revenue 토큰으로 바꿀 수 있는 중개인인지 여부 ( pangeaswap PoolRouter, Dex Aggregators...)
+    mapping(address => bool) public isVerifiedBroker;
+
     address private cachedPool;
 
     address[] private _feeTokens;
     mapping(address => bool) private isFee;
-
-    // @notice 리워드 수집 시 호출
-    event Collect(
-        address indexed pool,
-        address indexed token,
-        uint256 amount
-    );
-
-    // @notice 토큰을 스왑 후 분배 시 호출
-    event Share(
-        address indexed feeToken,
-        address indexed revenueToken,
-        uint256 amount,
-        uint256 output,
-        uint256 growthFundShare,
-        uint256 daoFundShare
-    );
 
     function initialize(
         address _masterDeployer,
@@ -144,24 +132,32 @@ contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
     function setRevenueToken(address _token) external onlyRole(MANAGER_ROLE) {
         require(_token != address(0), "NOT_ZERO");
         revenueToken = _token;
+
+        emit SetRevenueToken(_token);
     }
 
     // @notice set growthFund, only manager can update
     function setGrowthFund(address _fund) external onlyRole(MANAGER_ROLE) {
         require(_fund != address(0), "NOT_ZERO");
         growthFund = _fund;
+
+        emit SetGrowthFund(_fund);
     }
 
     // @notice set daoFund, only manager can update
     function setDaoFund(address _fund) external onlyRole(MANAGER_ROLE) {
         require(_fund != address(0), "NOT_ZERO");
         daoFund = _fund;
+
+        emit SetDaoFund(_fund);
     }
 
     // @notice set MinimumRevenue, only manager can update
     function setMinimumRevenue(uint256 amount) external onlyRole(MANAGER_ROLE) {
         require(amount > 0, "NOT_ZERO");
         minimumRevenue = amount;
+
+        emit SetMinimumRevenue(amount);
     }
 
     // @notice 풀 별 프로토콜 수익 중 growth fund에 할당할 비율
@@ -171,6 +167,8 @@ contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
 
         _growthFundRate[_pool] = _rate;
         _setupGrowthFundRate[_pool] = true;
+
+        emit SetGrowthFundRate(_pool, _rate);
     }
 
     // @notice 팩토리 별 프로토콜 수익 중 growth fund에 할당할 기본 비율, 풀 별 growthFundRate가 미지정인 경우 이용
@@ -180,6 +178,27 @@ contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
 
         _factoryGrowthFundRate[_factory] = _rate;
         _setupFactoryGrowthFundRate[_factory] = true;
+
+        emit SetFactoryGrowthFundRate(_factory, _rate);
+    }
+
+    // @notice Fee 토큰을 Revenue 토큰으로 스왑을 중개할 수 있는 브로커로 허용할 것인지 여부
+    function verifyBroker(address broker, bool isVerified) external onlyRole(MANAGER_ROLE) {
+        require(broker != address(0), "NOT_ZERO");
+        isVerifiedBroker[broker] = isVerified;
+
+        emit VerifyBroker(broker, isVerified);
+    }
+
+    // @notice Broker에게 feeToken에 대해 Approval을 미리 제공
+    // @dev 특정 브로커의 경우에는 approve 획득 전에는 경로를 제공하지 않기 때문에 구성
+    function setApproval(address broker, address feeToken, bool ok) external onlyRole(MANAGER_ROLE) {
+        require(isVerifiedBroker[broker], "NOT_VERIFED");
+        if (ok) {
+            IERC20(feeToken).approve(broker, type(uint256).max);
+        } else {
+            IERC20(feeToken).approve(broker, 0);
+        }
     }
 
     // @notice Growth Fund에 할애할 비중 계산
@@ -243,12 +262,18 @@ contract ProtocolRevenueShare is AccessControlUpgradeable, Multicall {
     }
 
     // @notice 풀에서 발생한 수익을 스왑 후, Growth Fund와 Dao Fund로 분배
+    // @param feeToken 프로토콜에서 발생한 수익 토큰
+    // @param minimumOutput 스왑할 경우, 슬리피지를 고려한 output
+    // @param broker feeToken을 revenueToken으로 전환을 수행하는 컨트랙트 ( pangeaswap pool Router, swap Scanner, 1inch, ...)
+    // @param data broker 컨트랙트로의 콜백 데이터
     function share(
-        address feeToken,          // @dev fee Token
-        uint256 minimumOutput,  // @dev 스왑할 경우, 슬리피지를 고려한 output
-        address payable broker, // @dev pangeaswap poolRouter or SwapScanner or 1Inch contracts
-        bytes calldata data     // @dev calldata from DEX Aggregators or pangeaswap
+        address feeToken,
+        uint256 minimumOutput,
+        address payable broker,
+        bytes calldata data
     ) external onlyRole(OP_ROLE) {
+        require(isVerifiedBroker[broker], "NOT_VERIFIED_BROKER");
+
         // 1. collect된 protocol revenue를 가져오기
         uint256 amount = IERC20(feeToken).balanceOf(address(this));
 
