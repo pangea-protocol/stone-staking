@@ -156,6 +156,25 @@ describe("SCENARIO:FORK", function () {
       await masterDeployer.setProtocolFeeTo(protocolRevenue.address);
 
       /**
+       * 브로커 권한 제공
+       * - 1인치 네트워크
+       * - 스왑스캐너
+       * - 판게아 스왑 라우터
+       */
+      await protocolRevenue.verifyBroker(
+        "0xf50782A24afCb26ACb85d086Cf892bFfFB5731B5",
+        true
+      );
+      await protocolRevenue.verifyBroker(
+        "0x17ac28a29670e637c8a6e1ec32b38fc301303e34",
+        true
+      );
+      await protocolRevenue.verifyBroker(
+        "0x1111111254fb6c44bac0bed2854e76f90643097d",
+        true
+      );
+
+      /**
        * Operator 권한으로 변경
        */
       protocolRevenue = protocolRevenue.connect(operator);

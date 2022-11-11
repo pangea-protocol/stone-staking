@@ -65,6 +65,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IProtocolFeePool__factory>;
     getContractFactory(
+      name: "IProtocolRevenueShare",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IProtocolRevenueShare__factory>;
+    getContractFactory(
+      name: "IProtocolRevenueShareEvent",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IProtocolRevenueShareEvent__factory>;
+    getContractFactory(
       name: "IStakedStone",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IStakedStone__factory>;
@@ -154,6 +162,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IProtocolFeePool>;
+    getContractAt(
+      name: "IProtocolRevenueShare",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IProtocolRevenueShare>;
+    getContractAt(
+      name: "IProtocolRevenueShareEvent",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IProtocolRevenueShareEvent>;
     getContractAt(
       name: "IStakedStone",
       address: string,

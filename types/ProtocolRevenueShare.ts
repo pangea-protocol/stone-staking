@@ -34,12 +34,14 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     "growthFund()": FunctionFragment;
     "hasRole(bytes32,address)": FunctionFragment;
     "initialize(address,address,address)": FunctionFragment;
+    "isVerifiedBroker(address)": FunctionFragment;
     "masterDeployer()": FunctionFragment;
     "minimumRevenue()": FunctionFragment;
     "multicall(bytes[])": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
     "revenueToken()": FunctionFragment;
     "revokeRole(bytes32,address)": FunctionFragment;
+    "setApproval(address,address,bool)": FunctionFragment;
     "setDaoFund(address)": FunctionFragment;
     "setFactoryGrowthFundRate(address,uint256)": FunctionFragment;
     "setGrowthFund(address)": FunctionFragment;
@@ -49,6 +51,7 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     "share(address,uint256,address,bytes)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "totalFeeTokens()": FunctionFragment;
+    "verifyBroker(address,bool)": FunctionFragment;
     "wklay()": FunctionFragment;
   };
 
@@ -104,6 +107,10 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     values: [string, string, string]
   ): string;
   encodeFunctionData(
+    functionFragment: "isVerifiedBroker",
+    values: [string]
+  ): string;
+  encodeFunctionData(
     functionFragment: "masterDeployer",
     values?: undefined
   ): string;
@@ -126,6 +133,10 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "revokeRole",
     values: [BytesLike, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setApproval",
+    values: [string, string, boolean]
   ): string;
   encodeFunctionData(functionFragment: "setDaoFund", values: [string]): string;
   encodeFunctionData(
@@ -159,6 +170,10 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "totalFeeTokens",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "verifyBroker",
+    values: [string, boolean]
   ): string;
   encodeFunctionData(functionFragment: "wklay", values?: undefined): string;
 
@@ -202,6 +217,10 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "isVerifiedBroker",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "masterDeployer",
     data: BytesLike
   ): Result;
@@ -219,6 +238,10 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setApproval",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "setDaoFund", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setFactoryGrowthFundRate",
@@ -249,6 +272,10 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     functionFragment: "totalFeeTokens",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "verifyBroker",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "wklay", data: BytesLike): Result;
 
   events: {
@@ -257,7 +284,14 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
     "RoleGranted(bytes32,address,address)": EventFragment;
     "RoleRevoked(bytes32,address,address)": EventFragment;
+    "SetDaoFund(address)": EventFragment;
+    "SetFactoryGrowthFundRate(address,uint256)": EventFragment;
+    "SetGrowthFund(address)": EventFragment;
+    "SetGrowthFundRate(address,uint256)": EventFragment;
+    "SetMinimumRevenue(uint256)": EventFragment;
+    "SetRevenueToken(address)": EventFragment;
     "Share(address,address,uint256,uint256,uint256,uint256)": EventFragment;
+    "VerifyBroker(address,bool)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "Collect"): EventFragment;
@@ -265,7 +299,14 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetDaoFund"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetFactoryGrowthFundRate"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetGrowthFund"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetGrowthFundRate"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetMinimumRevenue"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetRevenueToken"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Share"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "VerifyBroker"): EventFragment;
 }
 
 export type CollectEvent = TypedEvent<
@@ -301,6 +342,42 @@ export type RoleRevokedEvent = TypedEvent<
 
 export type RoleRevokedEventFilter = TypedEventFilter<RoleRevokedEvent>;
 
+export type SetDaoFundEvent = TypedEvent<[string], { fund: string }>;
+
+export type SetDaoFundEventFilter = TypedEventFilter<SetDaoFundEvent>;
+
+export type SetFactoryGrowthFundRateEvent = TypedEvent<
+  [string, BigNumber],
+  { factory: string; rate: BigNumber }
+>;
+
+export type SetFactoryGrowthFundRateEventFilter =
+  TypedEventFilter<SetFactoryGrowthFundRateEvent>;
+
+export type SetGrowthFundEvent = TypedEvent<[string], { fund: string }>;
+
+export type SetGrowthFundEventFilter = TypedEventFilter<SetGrowthFundEvent>;
+
+export type SetGrowthFundRateEvent = TypedEvent<
+  [string, BigNumber],
+  { pool: string; rate: BigNumber }
+>;
+
+export type SetGrowthFundRateEventFilter =
+  TypedEventFilter<SetGrowthFundRateEvent>;
+
+export type SetMinimumRevenueEvent = TypedEvent<
+  [BigNumber],
+  { amount: BigNumber }
+>;
+
+export type SetMinimumRevenueEventFilter =
+  TypedEventFilter<SetMinimumRevenueEvent>;
+
+export type SetRevenueTokenEvent = TypedEvent<[string], { token: string }>;
+
+export type SetRevenueTokenEventFilter = TypedEventFilter<SetRevenueTokenEvent>;
+
 export type ShareEvent = TypedEvent<
   [string, string, BigNumber, BigNumber, BigNumber, BigNumber],
   {
@@ -314,6 +391,13 @@ export type ShareEvent = TypedEvent<
 >;
 
 export type ShareEventFilter = TypedEventFilter<ShareEvent>;
+
+export type VerifyBrokerEvent = TypedEvent<
+  [string, boolean],
+  { broker: string; isVerified: boolean }
+>;
+
+export type VerifyBrokerEventFilter = TypedEventFilter<VerifyBrokerEvent>;
 
 export interface ProtocolRevenueShare extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -412,6 +496,11 @@ export interface ProtocolRevenueShare extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    isVerifiedBroker(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     masterDeployer(overrides?: CallOverrides): Promise<[string]>;
 
     minimumRevenue(overrides?: CallOverrides): Promise<[BigNumber]>;
@@ -432,6 +521,13 @@ export interface ProtocolRevenueShare extends BaseContract {
     revokeRole(
       role: BytesLike,
       account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setApproval(
+      broker: string,
+      feeToken: string,
+      ok: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -481,6 +577,12 @@ export interface ProtocolRevenueShare extends BaseContract {
     ): Promise<[boolean]>;
 
     totalFeeTokens(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    verifyBroker(
+      broker: string,
+      isVerified: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
 
     wklay(overrides?: CallOverrides): Promise<[string]>;
   };
@@ -555,6 +657,8 @@ export interface ProtocolRevenueShare extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  isVerifiedBroker(arg0: string, overrides?: CallOverrides): Promise<boolean>;
+
   masterDeployer(overrides?: CallOverrides): Promise<string>;
 
   minimumRevenue(overrides?: CallOverrides): Promise<BigNumber>;
@@ -575,6 +679,13 @@ export interface ProtocolRevenueShare extends BaseContract {
   revokeRole(
     role: BytesLike,
     account: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setApproval(
+    broker: string,
+    feeToken: string,
+    ok: boolean,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -624,6 +735,12 @@ export interface ProtocolRevenueShare extends BaseContract {
   ): Promise<boolean>;
 
   totalFeeTokens(overrides?: CallOverrides): Promise<BigNumber>;
+
+  verifyBroker(
+    broker: string,
+    isVerified: boolean,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   wklay(overrides?: CallOverrides): Promise<string>;
 
@@ -695,6 +812,8 @@ export interface ProtocolRevenueShare extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    isVerifiedBroker(arg0: string, overrides?: CallOverrides): Promise<boolean>;
+
     masterDeployer(overrides?: CallOverrides): Promise<string>;
 
     minimumRevenue(overrides?: CallOverrides): Promise<BigNumber>;
@@ -712,6 +831,13 @@ export interface ProtocolRevenueShare extends BaseContract {
     revokeRole(
       role: BytesLike,
       account: string,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setApproval(
+      broker: string,
+      feeToken: string,
+      ok: boolean,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -752,6 +878,12 @@ export interface ProtocolRevenueShare extends BaseContract {
     ): Promise<boolean>;
 
     totalFeeTokens(overrides?: CallOverrides): Promise<BigNumber>;
+
+    verifyBroker(
+      broker: string,
+      isVerified: boolean,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     wklay(overrides?: CallOverrides): Promise<string>;
   };
@@ -804,6 +936,33 @@ export interface ProtocolRevenueShare extends BaseContract {
       sender?: string | null
     ): RoleRevokedEventFilter;
 
+    "SetDaoFund(address)"(fund?: null): SetDaoFundEventFilter;
+    SetDaoFund(fund?: null): SetDaoFundEventFilter;
+
+    "SetFactoryGrowthFundRate(address,uint256)"(
+      factory?: null,
+      rate?: null
+    ): SetFactoryGrowthFundRateEventFilter;
+    SetFactoryGrowthFundRate(
+      factory?: null,
+      rate?: null
+    ): SetFactoryGrowthFundRateEventFilter;
+
+    "SetGrowthFund(address)"(fund?: null): SetGrowthFundEventFilter;
+    SetGrowthFund(fund?: null): SetGrowthFundEventFilter;
+
+    "SetGrowthFundRate(address,uint256)"(
+      pool?: null,
+      rate?: null
+    ): SetGrowthFundRateEventFilter;
+    SetGrowthFundRate(pool?: null, rate?: null): SetGrowthFundRateEventFilter;
+
+    "SetMinimumRevenue(uint256)"(amount?: null): SetMinimumRevenueEventFilter;
+    SetMinimumRevenue(amount?: null): SetMinimumRevenueEventFilter;
+
+    "SetRevenueToken(address)"(token?: null): SetRevenueTokenEventFilter;
+    SetRevenueToken(token?: null): SetRevenueTokenEventFilter;
+
     "Share(address,address,uint256,uint256,uint256,uint256)"(
       feeToken?: string | null,
       revenueToken?: string | null,
@@ -820,6 +979,12 @@ export interface ProtocolRevenueShare extends BaseContract {
       growthFundShare?: null,
       daoFundShare?: null
     ): ShareEventFilter;
+
+    "VerifyBroker(address,bool)"(
+      broker?: null,
+      isVerified?: null
+    ): VerifyBrokerEventFilter;
+    VerifyBroker(broker?: null, isVerified?: null): VerifyBrokerEventFilter;
   };
 
   estimateGas: {
@@ -890,6 +1055,11 @@ export interface ProtocolRevenueShare extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    isVerifiedBroker(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     masterDeployer(overrides?: CallOverrides): Promise<BigNumber>;
 
     minimumRevenue(overrides?: CallOverrides): Promise<BigNumber>;
@@ -910,6 +1080,13 @@ export interface ProtocolRevenueShare extends BaseContract {
     revokeRole(
       role: BytesLike,
       account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setApproval(
+      broker: string,
+      feeToken: string,
+      ok: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -959,6 +1136,12 @@ export interface ProtocolRevenueShare extends BaseContract {
     ): Promise<BigNumber>;
 
     totalFeeTokens(overrides?: CallOverrides): Promise<BigNumber>;
+
+    verifyBroker(
+      broker: string,
+      isVerified: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
 
     wklay(overrides?: CallOverrides): Promise<BigNumber>;
   };
@@ -1033,6 +1216,11 @@ export interface ProtocolRevenueShare extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    isVerifiedBroker(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     masterDeployer(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     minimumRevenue(overrides?: CallOverrides): Promise<PopulatedTransaction>;
@@ -1053,6 +1241,13 @@ export interface ProtocolRevenueShare extends BaseContract {
     revokeRole(
       role: BytesLike,
       account: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setApproval(
+      broker: string,
+      feeToken: string,
+      ok: boolean,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1102,6 +1297,12 @@ export interface ProtocolRevenueShare extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     totalFeeTokens(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    verifyBroker(
+      broker: string,
+      isVerified: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     wklay(overrides?: CallOverrides): Promise<PopulatedTransaction>;
   };
