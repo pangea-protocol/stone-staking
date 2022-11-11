@@ -272,8 +272,6 @@ contract ProtocolRevenueShare
         address payable broker,
         bytes calldata data
     ) external onlyRole(OP_ROLE) {
-        require(isVerifiedBroker[broker], "NOT_VERIFIED_BROKER");
-
         // 1. collect된 protocol revenue를 가져오기
         uint256 amount = IERC20(feeToken).balanceOf(address(this));
 
@@ -313,6 +311,8 @@ contract ProtocolRevenueShare
         if (token == address(revenue)) return amount;
 
         uint256 prevAmount = revenue.balanceOf(address(this));
+
+        require(isVerifiedBroker[broker], "NOT_VERIFIED_BROKER");
         {
             bool success;
             if (address(weth) == token) {
