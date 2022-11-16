@@ -149,11 +149,11 @@ task("protocolRevenueShare:setApproval")
 
 task("protocolRevenueShare:collect").setAction(
   async ({ start, limit }, { ethers }) => {
-    const deployer = await ethers.getNamedSigner("deployer");
+    const operator = await ethers.getNamedSigner("operator");
 
     const share = (await ethers.getContract(
       "ProtocolRevenueShare",
-      deployer
+      operator
     )) as ProtocolRevenueShare;
 
     await waitTx(share.collectByPage(0, 1000), "collectByPage");
