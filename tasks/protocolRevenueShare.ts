@@ -147,15 +147,13 @@ task("protocolRevenueShare:setApproval")
     await waitTx(share.setApproval(broker, feeToken, ok), "setApproval");
   });
 
-task("protocolRevenueShare:collect").setAction(
-  async ({ start, limit }, { ethers }) => {
-    const operator = await ethers.getNamedSigner("operator");
+task("protocolRevenueShare:collect").setAction(async ({}, { ethers }) => {
+  const operator = await ethers.getNamedSigner("operator");
 
-    const share = (await ethers.getContract(
-      "ProtocolRevenueShare",
-      operator
-    )) as ProtocolRevenueShare;
+  const share = (await ethers.getContract(
+    "ProtocolRevenueShare",
+    operator
+  )) as ProtocolRevenueShare;
 
-    await waitTx(share.collectByPage(0, 1000), "collectByPage");
-  }
-);
+  await waitTx(share.collectByPage(0, 1000), "collectByPage");
+});

@@ -4,6 +4,7 @@ import { BigNumber } from "ethers";
 import { network } from "hardhat";
 import { ProtocolRevenueShare__factory } from "../types";
 import { addressBook, isLocalNetwork, waitTx } from "./utils";
+import { MasterDeployer__factory } from "../resources";
 
 const deployFunction: DeployFunction = async function ({
   ethers,
@@ -45,19 +46,40 @@ const deployFunction: DeployFunction = async function ({
   /**
    * 2. 권한 제공
    */
+  const masterDeployer = MasterDeployer__factory.connect(
+    book.masterDeployer,
+    deployer
+  );
   await waitTx(
-    protocolShare.grantRole(await protocolShare.MANAGER_ROLE(), manager.address)
+    masterDeployer.setProtocolFeeTo(address),
+    "masterDeployer의 protocolFee 전환"
   );
 
   await waitTx(
-    protocolShare.grantRole(await protocolShare.OP_ROLE(), operator)
+    protocolShare.grantRole(
+      await protocolShare.MANAGER_ROLE(),
+      manager.address
+    ),
+    `${manager.address} : MANAGER 권한 획득`
+  );
+
+  await waitTx(
+    protocolShare.grantRole(await protocolShare.OP_ROLE(), operator),
+    `${operator} : OPERATOR 권한 획득`
   );
 
   /**
    * 3. 펀드 세팅
    */
-  await waitTx(protocolShare.connect(manager).setDaoFund(book.daoFund));
-  await waitTx(protocolShare.connect(manager).setGrowthFund(book.growthFund));
+  await waitTx(
+    protocolShare.connect(manager).setDaoFund(book.daoFund),
+    `${book.daoFund} : Dao Fund 지정`
+  );
+
+  await waitTx(
+    protocolShare.connect(manager).setGrowthFund(book.growthFund),
+    `${book.growthFund} : Growth Fund 지정`
+  );
 
   /**
    * 4. 팩토리 별 growthFundRate 변경
@@ -66,7 +88,8 @@ const deployFunction: DeployFunction = async function ({
     await waitTx(
       protocolShare
         .connect(manager)
-        .setFactoryGrowthFundRate(book.poolFactory, 0)
+        .setFactoryGrowthFundRate(book.poolFactory, 0),
+      `일반 풀 GrowthFund 비중 : 0%`
     );
   }
 
@@ -74,7 +97,8 @@ const deployFunction: DeployFunction = async function ({
     await waitTx(
       protocolShare
         .connect(manager)
-        .setFactoryGrowthFundRate(book.miningPoolFactory, 5000)
+        .setFactoryGrowthFundRate(book.miningPoolFactory, 5000),
+      `마이닝풀 Growth Fund 비중 : 50%`
     );
   }
 
@@ -82,7 +106,8 @@ const deployFunction: DeployFunction = async function ({
     await waitTx(
       protocolShare
         .connect(manager)
-        .setFactoryGrowthFundRate(book.yieldPoolFactory, 5000)
+        .setFactoryGrowthFundRate(book.yieldPoolFactory, 5000),
+      `일드풀 Growth Fund 비중 : 50%`
     );
   }
 
@@ -90,7 +115,10 @@ const deployFunction: DeployFunction = async function ({
    * 5. verifyBroker 세팅
    */
   for (let address of book.brokers) {
-    await waitTx(protocolShare.connect(manager).verifyBroker(address, true));
+    await waitTx(
+      protocolShare.connect(manager).verifyBroker(address, true),
+      `${address} 브로커 권한 제공`
+    );
   }
 };
 
