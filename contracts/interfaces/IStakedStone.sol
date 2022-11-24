@@ -34,6 +34,15 @@ interface IStakedStoneStruct {
         // @dev 할당된 배당 비중
         uint256 share;
     }
+
+    struct AllocatedDividend {
+        // @dev 지급 여부
+        bool isPaid;
+        // @dev 배당금 토큰
+        address[] tokens;
+        // @dev 지급된 배당액
+        uint256[] amounts;
+    }
 }
 
 interface IStakedStoneEvent {
