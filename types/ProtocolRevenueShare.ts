@@ -48,7 +48,9 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     "setGrowthFundRate(address,uint256)": FunctionFragment;
     "setMinimumRevenue(uint256)": FunctionFragment;
     "setRevenueToken(address)": FunctionFragment;
+    "setSkipCollect(address,bool)": FunctionFragment;
     "share(address,uint256,address,bytes)": FunctionFragment;
+    "skipCollect(address)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "totalFeeTokens()": FunctionFragment;
     "verifyBroker(address,bool)": FunctionFragment;
@@ -160,9 +162,14 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     values: [string]
   ): string;
   encodeFunctionData(
+    functionFragment: "setSkipCollect",
+    values: [string, boolean]
+  ): string;
+  encodeFunctionData(
     functionFragment: "share",
     values: [string, BigNumberish, string, BytesLike]
   ): string;
+  encodeFunctionData(functionFragment: "skipCollect", values: [string]): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
     values: [BytesLike]
@@ -263,7 +270,15 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     functionFragment: "setRevenueToken",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "setSkipCollect",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "share", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "skipCollect",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
@@ -290,6 +305,7 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
     "SetGrowthFundRate(address,uint256)": EventFragment;
     "SetMinimumRevenue(uint256)": EventFragment;
     "SetRevenueToken(address)": EventFragment;
+    "SetSkipCollect(address,bool)": EventFragment;
     "Share(address,address,uint256,uint256,uint256,uint256)": EventFragment;
     "VerifyBroker(address,bool)": EventFragment;
   };
@@ -305,6 +321,7 @@ export interface ProtocolRevenueShareInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "SetGrowthFundRate"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "SetMinimumRevenue"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "SetRevenueToken"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetSkipCollect"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Share"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "VerifyBroker"): EventFragment;
 }
@@ -377,6 +394,13 @@ export type SetMinimumRevenueEventFilter =
 export type SetRevenueTokenEvent = TypedEvent<[string], { token: string }>;
 
 export type SetRevenueTokenEventFilter = TypedEventFilter<SetRevenueTokenEvent>;
+
+export type SetSkipCollectEvent = TypedEvent<
+  [string, boolean],
+  { pool: string; skip: boolean }
+>;
+
+export type SetSkipCollectEventFilter = TypedEventFilter<SetSkipCollectEvent>;
 
 export type ShareEvent = TypedEvent<
   [string, string, BigNumber, BigNumber, BigNumber, BigNumber],
@@ -563,6 +587,12 @@ export interface ProtocolRevenueShare extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    setSkipCollect(
+      pool: string,
+      skip: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     share(
       feeToken: string,
       minimumOutput: BigNumberish,
@@ -570,6 +600,8 @@ export interface ProtocolRevenueShare extends BaseContract {
       data: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    skipCollect(arg0: string, overrides?: CallOverrides): Promise<[boolean]>;
 
     supportsInterface(
       interfaceId: BytesLike,
@@ -721,6 +753,12 @@ export interface ProtocolRevenueShare extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  setSkipCollect(
+    pool: string,
+    skip: boolean,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   share(
     feeToken: string,
     minimumOutput: BigNumberish,
@@ -728,6 +766,8 @@ export interface ProtocolRevenueShare extends BaseContract {
     data: BytesLike,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
+
+  skipCollect(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
   supportsInterface(
     interfaceId: BytesLike,
@@ -864,6 +904,12 @@ export interface ProtocolRevenueShare extends BaseContract {
 
     setRevenueToken(_token: string, overrides?: CallOverrides): Promise<void>;
 
+    setSkipCollect(
+      pool: string,
+      skip: boolean,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     share(
       feeToken: string,
       minimumOutput: BigNumberish,
@@ -871,6 +917,8 @@ export interface ProtocolRevenueShare extends BaseContract {
       data: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    skipCollect(arg0: string, overrides?: CallOverrides): Promise<boolean>;
 
     supportsInterface(
       interfaceId: BytesLike,
@@ -962,6 +1010,12 @@ export interface ProtocolRevenueShare extends BaseContract {
 
     "SetRevenueToken(address)"(token?: null): SetRevenueTokenEventFilter;
     SetRevenueToken(token?: null): SetRevenueTokenEventFilter;
+
+    "SetSkipCollect(address,bool)"(
+      pool?: null,
+      skip?: null
+    ): SetSkipCollectEventFilter;
+    SetSkipCollect(pool?: null, skip?: null): SetSkipCollectEventFilter;
 
     "Share(address,address,uint256,uint256,uint256,uint256)"(
       feeToken?: string | null,
@@ -1122,6 +1176,12 @@ export interface ProtocolRevenueShare extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    setSkipCollect(
+      pool: string,
+      skip: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     share(
       feeToken: string,
       minimumOutput: BigNumberish,
@@ -1129,6 +1189,8 @@ export interface ProtocolRevenueShare extends BaseContract {
       data: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    skipCollect(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     supportsInterface(
       interfaceId: BytesLike,
@@ -1283,12 +1345,23 @@ export interface ProtocolRevenueShare extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    setSkipCollect(
+      pool: string,
+      skip: boolean,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     share(
       feeToken: string,
       minimumOutput: BigNumberish,
       broker: string,
       data: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    skipCollect(
+      arg0: string,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     supportsInterface(
