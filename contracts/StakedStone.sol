@@ -170,6 +170,8 @@ contract StakedStone is
     }
 
     modifier updateUserSnapshot(address owner) {
+        require(readyDividend.recordDate == 0, "ON DIVIDEND");
+
         uint256 growthGlobal = _updateGrowthGlobal();
         _updateRewardSnapshot(owner, growthGlobal);
         _updateDividendSnapshot(owner);
