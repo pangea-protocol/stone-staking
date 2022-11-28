@@ -216,7 +216,7 @@ contract StakedStone is
         require(readyDividend.recordDate == 0, "ALREADY SET");
         require(totalShare > 0, "TOTAL SHARE NOT ZERO");
 
-        readyDividend.startDate = _dividendHistory.length > 0 ? _dividendHistory[_dividendHistory.length-1].recordDate : openDate;
+        readyDividend.startDate = epochStartDate();
         readyDividend.recordDate = block.timestamp;
         readyDividend.totalShare = totalShare;
 
@@ -337,6 +337,13 @@ contract StakedStone is
     }
 
     /**
+     * @notice 현 배당 기준 적용 시작 시간
+     */
+    function epochStartDate() public view returns (uint256) {
+        return _dividendHistory.length > 0 ? _dividendHistory[_dividendHistory.length-1].recordDate : openDate;
+    }
+
+    /**
      * @notice 집행된 배당 횟수
      */
     function totalDividendEpoch() external view returns (uint256) {
@@ -424,7 +431,7 @@ contract StakedStone is
             _ownedRequestsIndex[lastRequestId] = requestIndex;
         }
 
-        delete _ownedRequestsIndex[requestIndex];
+        delete _ownedRequestsIndex[requestId];
         delete _ownedRequests[owner][lastRequestIndex];
     }
 
@@ -494,7 +501,7 @@ contract StakedStone is
     /**
      * @notice 주어진 배당 회차에 할당된 배당금액 계산
      */
-    function allocatedDividend(address owner, uint256 epoch) external view returns (
+    function allocatedDividend(address owner, uint256 epoch) public view returns (
         bool isPaid,
         address[] memory tokens,
         uint256[] memory amounts
@@ -516,6 +523,19 @@ contract StakedStone is
                 share,
                 epochTotalShare
             );
+        }
+    }
+
+    /**
+     * @notice 이 때까지 받을 수 있는 모든 배당금 조회
+     */
+    function allocatedDividendAll(address owner) external view returns (AllocatedDividend[] memory dividends) {
+        uint256 total = _dividendHistory.length;
+        dividends = new AllocatedDividend[](total);
+
+        for (uint256 i=0;i<total;i++) {
+            (bool isPaid,address[] memory tokens,uint256[] memory amounts) = allocatedDividend(owner, i);
+            dividends[i] = AllocatedDividend(isPaid, tokens, amounts);
         }
     }
 
