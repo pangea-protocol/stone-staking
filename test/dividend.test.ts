@@ -134,6 +134,29 @@ describe("DIVIDEND UNIT TEST", async () => {
       expect(timestamp).to.be.eq(result.recordDate);
     });
 
+    it("stake or unstake is locked after setDividendRecordDate successfully", async () => {
+      await jumpToNextBlockTimestamp(openDate);
+
+      const amount = ethers.utils.parseEther("10");
+      await stakedStone.connect(user0).stake(amount);
+
+      await stakedStone.connect(manager).setDividendRecordDate();
+
+      await stakedStone.readyDividendInfo();
+
+      await expect(stakedStone.connect(user0).stake(amount)).to.be.revertedWith(
+        "ON DIVIDEND"
+      );
+
+      await expect(
+        stakedStone.connect(user0).unstake(amount)
+      ).to.be.revertedWith("ON DIVIDEND");
+
+      await expect(stakedStone.connect(user0).claimReward()).to.be.revertedWith(
+        "ON DIVIDEND"
+      );
+    });
+
     it("REVERT: resetDividendRecordDate", async () => {
       await jumpToNextBlockTimestamp(openDate);
 

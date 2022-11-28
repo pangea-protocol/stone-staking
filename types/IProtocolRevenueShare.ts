@@ -52,6 +52,7 @@ export interface IProtocolRevenueShareInterface extends utils.Interface {
     "SetGrowthFundRate(address,uint256)": EventFragment;
     "SetMinimumRevenue(uint256)": EventFragment;
     "SetRevenueToken(address)": EventFragment;
+    "SetSkipCollect(address,bool)": EventFragment;
     "Share(address,address,uint256,uint256,uint256,uint256)": EventFragment;
     "VerifyBroker(address,bool)": EventFragment;
   };
@@ -63,6 +64,7 @@ export interface IProtocolRevenueShareInterface extends utils.Interface {
   getEvent(nameOrSignatureOrTopic: "SetGrowthFundRate"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "SetMinimumRevenue"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "SetRevenueToken"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "SetSkipCollect"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Share"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "VerifyBroker"): EventFragment;
 }
@@ -109,6 +111,13 @@ export type SetMinimumRevenueEventFilter =
 export type SetRevenueTokenEvent = TypedEvent<[string], { token: string }>;
 
 export type SetRevenueTokenEventFilter = TypedEventFilter<SetRevenueTokenEvent>;
+
+export type SetSkipCollectEvent = TypedEvent<
+  [string, boolean],
+  { pool: string; skip: boolean }
+>;
+
+export type SetSkipCollectEventFilter = TypedEventFilter<SetSkipCollectEvent>;
 
 export type ShareEvent = TypedEvent<
   [string, string, BigNumber, BigNumber, BigNumber, BigNumber],
@@ -253,6 +262,12 @@ export interface IProtocolRevenueShare extends BaseContract {
 
     "SetRevenueToken(address)"(token?: null): SetRevenueTokenEventFilter;
     SetRevenueToken(token?: null): SetRevenueTokenEventFilter;
+
+    "SetSkipCollect(address,bool)"(
+      pool?: null,
+      skip?: null
+    ): SetSkipCollectEventFilter;
+    SetSkipCollect(pool?: null, skip?: null): SetSkipCollectEventFilter;
 
     "Share(address,address,uint256,uint256,uint256,uint256)"(
       feeToken?: string | null,

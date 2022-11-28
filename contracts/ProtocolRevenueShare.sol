@@ -102,6 +102,9 @@ contract ProtocolRevenueShare
     address[] private _feeTokens;
     mapping(address => bool) private isFee;
 
+    // @notice 수수료 수취를 스킵하는 풀 여부
+    mapping(address => bool) public skipCollect;
+
     function initialize(
         address _masterDeployer,
         address _revenueToken,
@@ -201,6 +204,18 @@ contract ProtocolRevenueShare
         }
     }
 
+    // @notice 해당 풀에서 수수료 수취 징수 과정을 스킵할 떄 이용
+    // @dev 임의의 토큰을 만들고 swap pool을 구성하는 토큰 중 하나로 만들 경우 fee가 collect될 때
+    //      임의의 토큰 내 transfer 함수에서 to가 fee를 collect하는 contract일 경우 revert함으로써
+    //      수수료 징수를 차단할 수 있습니다
+    function setSkipCollect(address pool, bool skip) external onlyRole(MANAGER_ROLE) {
+        IMasterDeployer deployer = IMasterDeployer(masterDeployer);
+        require(deployer.pools(pool), "NOT POOL");
+        skipCollect[pool] = skip;
+
+        emit SetSkipCollect(pool, skip);
+    }
+
     // @notice Growth Fund에 할애할 비중 계산
     function getGrowthFundRate(address _pool) public view returns (uint256 rate) {
         if (_setupGrowthFundRate[_pool]) {
@@ -242,6 +257,9 @@ contract ProtocolRevenueShare
 
         for (uint256 i = start; i < end; i++) {
             address pool = deployer.getPoolAddress(i);
+            // @dev skipCollect 대상의 풀인 경우, collectByPage에서 스킵
+            if (skipCollect[pool]) continue;
+
             (uint128 rev0, uint128 rev1) = IProtocolFeePool(pool).getTokenProtocolFees();
 
             // @dev 프로토콜 수익이 존재하지 않은 경우 스킵
@@ -257,6 +275,8 @@ contract ProtocolRevenueShare
     /// @notice 특정 풀에서 프로토콜 수익 모으기
     function collectFrom(address pool) external onlyRole(OP_ROLE) {
         cachedPool = pool;
+        if (skipCollect[pool]) return;
+
         IProtocolFeePool(pool).collectProtocolFee();
         cachedPool = address(0);
     }

@@ -36,6 +36,9 @@ interface IProtocolRevenueShareEvent {
 
     // @notice 브로커 verify 여부 변경 시 호출
     event VerifyBroker(address broker, bool isVerified);
+
+    // @notice 특정 풀에서 수수료 수취를 막을 때 호출
+    event SetSkipCollect(address pool, bool skip);
 }
 
 interface IProtocolRevenueShare is IProtocolRevenueShareEvent {
