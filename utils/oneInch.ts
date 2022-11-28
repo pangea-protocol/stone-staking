@@ -1,14 +1,13 @@
-import {constants, BigNumber, BigNumberish} from "ethers";
+import { constants, BigNumber, BigNumberish } from "ethers";
 import fetch from "node-fetch";
-import {addressEqual} from "./utils";
+import { addressEqual } from "./utils";
+import { IFetcher } from "./fetcher";
 
-export class OneInchFetcher {
-
+export class OneInchFetcher implements IFetcher {
   constructor(
-      private readonly wklayAddress: string,
-      private readonly revenueTokenAddress: string
-      ) {
-  }
+    private readonly wklayAddress: string,
+    private readonly revenueTokenAddress: string
+  ) {}
   /**
    * 원인치을 통해 fetch 정보 가져오기
    *
@@ -18,10 +17,10 @@ export class OneInchFetcher {
    * @param amount
    */
   async swap(
-      fromToken: string,
-      toToken: string,
-      fromAddress: string,
-      amount: BigNumberish
+    fromToken: string,
+    toToken: string,
+    fromAddress: string,
+    amount: BigNumberish
   ) {
     if (addressEqual(fromToken, this.revenueTokenAddress)) {
       return {
@@ -30,7 +29,7 @@ export class OneInchFetcher {
         to: constants.AddressZero,
         data: "0x",
         value: BigNumber.from(0),
-      }
+      };
     }
 
     if (addressEqual(fromToken, this.wklayAddress)) {

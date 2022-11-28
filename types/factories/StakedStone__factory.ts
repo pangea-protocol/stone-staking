@@ -457,6 +457,42 @@ const _abi = [
         type: "address",
       },
     ],
+    name: "allocatedDividendAll",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "bool",
+            name: "isPaid",
+            type: "bool",
+          },
+          {
+            internalType: "address[]",
+            name: "tokens",
+            type: "address[]",
+          },
+          {
+            internalType: "uint256[]",
+            name: "amounts",
+            type: "uint256[]",
+          },
+        ],
+        internalType: "struct IStakedStoneStruct.AllocatedDividend[]",
+        name: "dividends",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+    ],
     name: "balanceOf",
     outputs: [
       {
@@ -621,6 +657,19 @@ const _abi = [
         internalType: "struct IStakedStoneStruct.Dividend",
         name: "",
         type: "tuple",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "epochStartDate",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
       },
     ],
     stateMutability: "view",

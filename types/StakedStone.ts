@@ -17,6 +17,18 @@ import { FunctionFragment, Result, EventFragment } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
+export type AllocatedDividendStruct = {
+  isPaid: boolean;
+  tokens: string[];
+  amounts: BigNumberish[];
+};
+
+export type AllocatedDividendStructOutput = [boolean, string[], BigNumber[]] & {
+  isPaid: boolean;
+  tokens: string[];
+  amounts: BigNumber[];
+};
+
 export type DividendStruct = {
   startDate: BigNumberish;
   recordDate: BigNumberish;
@@ -64,6 +76,7 @@ export interface StakedStoneInterface extends utils.Interface {
     "MANAGER_ROLE()": FunctionFragment;
     "accumulativeUserReward(address)": FunctionFragment;
     "allocatedDividend(address,uint256)": FunctionFragment;
+    "allocatedDividendAll(address)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
     "cancelReward(uint256,uint256)": FunctionFragment;
     "claimDividend(uint256)": FunctionFragment;
@@ -73,6 +86,7 @@ export interface StakedStoneInterface extends utils.Interface {
     "depositDividend(address,uint256)": FunctionFragment;
     "depositReward(uint256,uint256)": FunctionFragment;
     "dividendInfo(uint256)": FunctionFragment;
+    "epochStartDate()": FunctionFragment;
     "executeDividend()": FunctionFragment;
     "getRoleAdmin(bytes32)": FunctionFragment;
     "grantRole(bytes32,address)": FunctionFragment;
@@ -116,6 +130,10 @@ export interface StakedStoneInterface extends utils.Interface {
     functionFragment: "allocatedDividend",
     values: [string, BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "allocatedDividendAll",
+    values: [string]
+  ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
   encodeFunctionData(
     functionFragment: "cancelReward",
@@ -148,6 +166,10 @@ export interface StakedStoneInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "dividendInfo",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "epochStartDate",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "executeDividend",
@@ -257,6 +279,10 @@ export interface StakedStoneInterface extends utils.Interface {
     functionFragment: "allocatedDividend",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "allocatedDividendAll",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "cancelReward",
@@ -288,6 +314,10 @@ export interface StakedStoneInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "dividendInfo",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "epochStartDate",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -561,6 +591,15 @@ export interface StakedStone extends BaseContract {
       }
     >;
 
+    allocatedDividendAll(
+      owner: string,
+      overrides?: CallOverrides
+    ): Promise<
+      [AllocatedDividendStructOutput[]] & {
+        dividends: AllocatedDividendStructOutput[];
+      }
+    >;
+
     balanceOf(
       owner: string,
       overrides?: CallOverrides
@@ -604,6 +643,8 @@ export interface StakedStone extends BaseContract {
       epoch: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[DividendStructOutput]>;
+
+    epochStartDate(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     executeDividend(
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -748,6 +789,11 @@ export interface StakedStone extends BaseContract {
     }
   >;
 
+  allocatedDividendAll(
+    owner: string,
+    overrides?: CallOverrides
+  ): Promise<AllocatedDividendStructOutput[]>;
+
   balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
   cancelReward(
@@ -785,6 +831,8 @@ export interface StakedStone extends BaseContract {
     epoch: BigNumberish,
     overrides?: CallOverrides
   ): Promise<DividendStructOutput>;
+
+  epochStartDate(overrides?: CallOverrides): Promise<BigNumber>;
 
   executeDividend(
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -927,6 +975,11 @@ export interface StakedStone extends BaseContract {
       }
     >;
 
+    allocatedDividendAll(
+      owner: string,
+      overrides?: CallOverrides
+    ): Promise<AllocatedDividendStructOutput[]>;
+
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     cancelReward(
@@ -965,6 +1018,8 @@ export interface StakedStone extends BaseContract {
       epoch: BigNumberish,
       overrides?: CallOverrides
     ): Promise<DividendStructOutput>;
+
+    epochStartDate(overrides?: CallOverrides): Promise<BigNumber>;
 
     executeDividend(overrides?: CallOverrides): Promise<void>;
 
@@ -1233,6 +1288,11 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    allocatedDividendAll(
+      owner: string,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     balanceOf(owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
     cancelReward(
@@ -1273,6 +1333,8 @@ export interface StakedStone extends BaseContract {
       epoch: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    epochStartDate(overrides?: CallOverrides): Promise<BigNumber>;
 
     executeDividend(
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1408,6 +1470,11 @@ export interface StakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    allocatedDividendAll(
+      owner: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     balanceOf(
       owner: string,
       overrides?: CallOverrides
@@ -1451,6 +1518,8 @@ export interface StakedStone extends BaseContract {
       epoch: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    epochStartDate(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     executeDividend(
       overrides?: Overrides & { from?: string | Promise<string> }
