@@ -403,9 +403,9 @@ contract StakedStone is
         require(request.requestTs + cooldownPeriod <= block.timestamp, "NEED COOLDOWN");
         amount = request.amount;
 
-        IERC20(stone).safeTransfer(msg.sender, amount);
-
         closeRequest(msg.sender, requestId);
+
+        IERC20(stone).safeTransfer(msg.sender, amount);
 
         emit Withdraw(msg.sender, amount);
     }
@@ -474,6 +474,7 @@ contract StakedStone is
 
         Dividend memory epochDividend = _dividendHistory[epoch];
         uint256 epochTotalShare = epochDividend.totalShare;
+        _userDividendSnapshot[msg.sender][epoch].isPaid = true;
 
         for (uint256 i = 0; i < epochDividend.tokens.length; i++) {
             address token = epochDividend.tokens[i];
@@ -487,8 +488,6 @@ contract StakedStone is
 
             emit ClaimDividend(msg.sender, epoch, token, userAmount);
         }
-
-        _userDividendSnapshot[msg.sender][epoch].isPaid = true;
     }
 
     /**
