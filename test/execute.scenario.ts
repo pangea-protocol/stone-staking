@@ -16,6 +16,7 @@ import { sleep } from "../utils/utils";
 import { config } from "dotenv";
 import { SwapScannerFetcher } from "../utils/swapscanner";
 import { PangeaswapFetcher } from "../utils/pangeaswap";
+import helpers from "@nomicfoundation/hardhat-network-helpers";
 config();
 
 describe("SCENARIO:FORK", function () {
@@ -42,7 +43,8 @@ describe("SCENARIO:FORK", function () {
     [user, manager, operator, growthFund, daoFund] = await ethers.getSigners();
 
     const deployerAddress = "0x2A2F23ff33671361010D357529BDF0adca9416Fc";
-    pangeaDeployer = await ethers.getImpersonatedSigner(deployerAddress);
+    await helpers.impersonateAccount(deployerAddress);
+    pangeaDeployer = await ethers.getSigner(deployerAddress);
 
     masterDeployer = await MasterDeployer__factory.connect(
       "0xEB4B1CE03bb947Ce23ABd1403dF7C9B86004178d",
