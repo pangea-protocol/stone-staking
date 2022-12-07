@@ -123,6 +123,26 @@ describe("CLAIM DIVIDEND UNIT TEST", async () => {
       await faucetStone(user2, ethers.utils.parseEther("10000"));
     });
 
+    it("문제 케이스> 유저 0이 stake 후 unstake를 한 후에도 reward는 모두 수령할 수 있어야 함", async () => {
+      await jumpToStartOfWeek(false);
+      const amount = ethers.utils.parseEther("10");
+      await stakedStone.connect(user0).stake(amount);
+      await jumpDays(10, false);
+
+      await stakedStone.connect(user0).unstake(amount.div(2));
+      await jumpDays(20, false);
+
+      await depositDividend([revenueToken], [ethers.utils.parseEther("10")]);
+
+      const result = await stakedStone.allocatedDividend(user0.address, 0);
+
+      expect(result.tokens[0]).to.be.eq(revenueToken.address);
+      expect(result.amounts[0]).to.be.closeTo(
+        ethers.utils.parseEther("10"),
+        DUST
+      );
+    });
+
     it("유저 0이 reward를 모두 수령하는 케이스", async () => {
       await jumpToStartOfWeek(false);
       const amount = ethers.utils.parseEther("10");
