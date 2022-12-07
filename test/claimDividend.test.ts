@@ -344,23 +344,23 @@ describe("CLAIM DIVIDEND UNIT TEST", async () => {
       const amount = ethers.utils.parseEther("10");
 
       await stakedStone.connect(user0).stake(amount);
-      await jumpDays(30);
+      await jumpDays(30, false);
       await stakedStone.connect(user1).stake(amount);
-      await jumpDays(30);
+      await jumpDays(30, false);
 
       await depositDividend([revenueToken], [ethers.utils.parseEther("10")]);
 
       await stakedStone.connect(user1).unstake(amount);
-      await jumpDays(30);
+      await jumpDays(30, false);
       await stakedStone.connect(user1).stake(amount);
-      await jumpDays(30);
+      await jumpDays(30, false);
 
       await depositDividend([revenueToken], [ethers.utils.parseEther("10")]);
 
       await stakedStone.connect(user1).stake(amount);
-      await jumpDays(30);
-      await stakedStone.connect(user1).unstake(amount.mul(2));
-      await jumpDays(30);
+      await jumpDays(30, false);
+      await stakedStone.connect(user1).unstake(amount);
+      await jumpDays(30, false);
 
       await depositDividend([revenueToken], [ethers.utils.parseEther("10")]);
 
@@ -417,11 +417,11 @@ describe("CLAIM DIVIDEND UNIT TEST", async () => {
       const result22 = await stakedStone.allocatedDividend(user2.address, 2);
 
       expect(result20.amounts[0]).to.be.closeTo(
-        ethers.utils.parseEther("10").div(2),
+        ethers.utils.parseEther("10").mul(6).div(15),
         DUST
       );
       expect(result21.amounts[0]).to.be.closeTo(
-        ethers.utils.parseEther("10").div(2),
+        ethers.utils.parseEther("10").mul(9).div(15),
         DUST
       );
       expect(result22.amounts[0]).to.be.eq(0);
