@@ -560,9 +560,7 @@ contract StakedStone is
         uint256 epoch,
         Dividend memory epochDividend
     ) private view returns (uint256 share) {
-        // first case, already settle
         share = _userDividendSnapshot[owner][epoch].share;
-        if (share > 0) return share;
 
         // if there is no balance, skip
         uint256 balance = _balanceOf[owner];
@@ -572,7 +570,7 @@ contract StakedStone is
         uint256 startDate = Math.max(_userLastRecordDate[owner], epochDividend.startDate);
         if (epochDividend.recordDate <= startDate) return share;
 
-        return (epochDividend.recordDate - startDate) * balance;
+        return share + (epochDividend.recordDate - startDate) * balance;
     }
 
     function _updatePendingReward(uint256 amount) internal returns (uint256) {
