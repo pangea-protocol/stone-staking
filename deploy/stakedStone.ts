@@ -19,6 +19,9 @@ const deployFunction: DeployFunction = async function ({
   if (network.name == "baobab") {
     stone = "0x816BE2E0594D7cFF6a745591E72BB7397F272385";
     openDate = Math.floor(new Date().getTime() / 1000);
+  } else if (network.name == "cypress") {
+    stone = "0xb49e754228bc716129e63b1a7b0b6cf27299979e";
+    openDate = 1671667200; // 2022.12.22 09:00:00 (+09:00)
   } else {
     throw new Error("NOT DETERMINED STONE AND OPEN DATE");
   }

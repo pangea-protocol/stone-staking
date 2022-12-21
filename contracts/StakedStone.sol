@@ -643,6 +643,8 @@ contract StakedStone is
 
     function _calculateRewardToDistribute() private view returns (uint256 amount) {
         uint256 _checkpoint = checkpoint;
+        if (block.timestamp < _checkpoint) return 0;
+
         uint256 currentEpoch = (block.timestamp / 7 days) * 7 days;
 
         // @dev 과거 미정산된 Reward 정산
