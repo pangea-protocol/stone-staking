@@ -58,6 +58,13 @@ export type UnstakingRequestStructOutput = [
   isClaimed: boolean;
 };
 
+export type DividendSnapshotStruct = { isPaid: boolean; share: BigNumberish };
+
+export type DividendSnapshotStructOutput = [boolean, BigNumber] & {
+  isPaid: boolean;
+  share: BigNumber;
+};
+
 export interface IStakedStoneInterface extends utils.Interface {
   functions: {
     "accumulativeUserReward(address)": FunctionFragment;
@@ -74,6 +81,7 @@ export interface IStakedStoneInterface extends utils.Interface {
     "unstake(uint256)": FunctionFragment;
     "unstakingRequestByIndex(address,uint256)": FunctionFragment;
     "unstakingRequestCounts(address)": FunctionFragment;
+    "userDividendSnapshot(address,uint256)": FunctionFragment;
     "withdraw(uint256)": FunctionFragment;
   };
 
@@ -125,6 +133,10 @@ export interface IStakedStoneInterface extends utils.Interface {
     values: [string]
   ): string;
   encodeFunctionData(
+    functionFragment: "userDividendSnapshot",
+    values: [string, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "withdraw",
     values: [BigNumberish]
   ): string;
@@ -171,6 +183,10 @@ export interface IStakedStoneInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "unstakingRequestCounts",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "userDividendSnapshot",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
@@ -390,6 +406,12 @@ export interface IStakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    userDividendSnapshot(
+      owner: string,
+      index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[DividendSnapshotStructOutput]>;
+
     withdraw(
       requestId: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -460,6 +482,12 @@ export interface IStakedStone extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  userDividendSnapshot(
+    owner: string,
+    index: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<DividendSnapshotStructOutput>;
+
   withdraw(
     requestId: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -522,6 +550,12 @@ export interface IStakedStone extends BaseContract {
       owner: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    userDividendSnapshot(
+      owner: string,
+      index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<DividendSnapshotStructOutput>;
 
     withdraw(
       requestId: BigNumberish,
@@ -703,6 +737,12 @@ export interface IStakedStone extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    userDividendSnapshot(
+      owner: string,
+      index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     withdraw(
       requestId: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -773,6 +813,12 @@ export interface IStakedStone extends BaseContract {
 
     unstakingRequestCounts(
       owner: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    userDividendSnapshot(
+      owner: string,
+      index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

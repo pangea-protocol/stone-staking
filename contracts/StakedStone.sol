@@ -113,7 +113,7 @@ contract StakedStone is
     uint256 private rewardGrowthGlobalLast;
     uint256 private pendingReward;
 
-    uint256 private totalShare;
+    uint256 public totalShare;
 
     mapping(address => uint256) private _balanceOf;
     uint256 private _totalSupply;
@@ -328,6 +328,13 @@ contract StakedStone is
      */
     function totalSupply() external view returns (uint256) {
         return _totalSupply;
+    }
+
+    /**
+     * @notice user's dividend snapshot
+     */
+    function userDividendSnapshot(address owner, uint256 index) external view returns (DividendSnapshot memory) {
+        return _userDividendSnapshot[owner][index];
     }
 
     /**

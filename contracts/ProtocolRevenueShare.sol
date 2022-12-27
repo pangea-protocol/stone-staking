@@ -195,7 +195,7 @@ contract ProtocolRevenueShare
 
     // @notice Broker에게 feeToken에 대해 Approval을 미리 제공
     // @dev 특정 브로커의 경우에는 approve 획득 전에는 경로를 제공하지 않기 때문에 구성
-    function setApproval(address broker, address feeToken, bool ok) external onlyRole(MANAGER_ROLE) {
+    function setApproval(address broker, address feeToken, bool ok) external onlyRole(OP_ROLE) {
         require(isVerifiedBroker[broker], "NOT_VERIFED");
         if (ok) {
             IERC20(feeToken).approve(broker, type(uint256).max);
@@ -341,9 +341,10 @@ contract ProtocolRevenueShare
                 (success, ) = broker.call{value: amount}(data);
             } else {
                 // approve first
-                IERC20(token).approve(broker, amount);
+                if (amount > IERC20(token).allowance(address(this),broker)) {
+                    IERC20(token).approve(broker, amount);
+                }
                 (success, ) = broker.call(data);
-                IERC20(token).approve(broker, 0);
             }
             require(success, "BROKER_FAIL");
         }

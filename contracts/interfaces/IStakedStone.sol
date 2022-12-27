@@ -76,6 +76,8 @@ interface IStakedStone is IStakedStoneStruct, IStakedStoneEvent {
 
     function totalSupply() external view returns (uint256);
 
+    function userDividendSnapshot(address owner, uint256 index) external view returns (DividendSnapshot memory);
+
     function unstakingRequestCounts(address owner) external view returns (uint256);
 
     function unstakingRequestByIndex(address owner, uint256 index) external view returns (UnstakingRequest memory);

@@ -573,6 +573,42 @@ const _abi = [
   {
     inputs: [
       {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "index",
+        type: "uint256",
+      },
+    ],
+    name: "userDividendSnapshot",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "bool",
+            name: "isPaid",
+            type: "bool",
+          },
+          {
+            internalType: "uint256",
+            name: "share",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct IStakedStoneStruct.DividendSnapshot",
+        name: "",
+        type: "tuple",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "uint256",
         name: "requestId",
         type: "uint256",
