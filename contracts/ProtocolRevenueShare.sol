@@ -231,6 +231,7 @@ contract ProtocolRevenueShare
     /// @notice 특정 토큰에 대한 Revenue 비율 파악
     function allocateRevenue(address feeToken) external view returns (uint256 amount, uint256 growthFundShare, uint256 daoFundShare) {
         amount = IERC20(feeToken).balanceOf(address(this));
+        if (amount == 0) return (0, 0, 0);
         growthFundShare = FullMath.mulDiv(amount, _allocatedGrowthFunds[feeToken], amount * BIPS);
         daoFundShare = amount - growthFundShare;
     }
